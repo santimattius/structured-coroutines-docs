@@ -37,44 +37,24 @@ const Home: React.FC = () => {
               <div className="w-3.5 h-3.5 rounded-full bg-slate-700" />
               <div className="w-3.5 h-3.5 rounded-full bg-slate-700" />
             </div>
-            <pre className="space-y-1.5 text-slate-300 font-mono text-sm leading-7 overflow-x-auto whitespace-pre" role="img" aria-label="Code sample: StructuredScope loadData">
+            <pre className="space-y-1.5 text-slate-300 font-mono text-sm leading-7 overflow-x-auto whitespace-pre" role="img" aria-label="Code sample: loadData with StructuredScope">
               <code className="block">
-                <span className="text-fuchsia-400">@StructuredScope</span>
-                {'\n'}
-                <span className="text-violet-400 font-bold">suspend</span>
-                <span className="text-slate-300"> </span>
                 <span className="text-violet-400 font-bold">fun</span>
                 <span className="text-white font-bold"> loadData</span>
-                <span className="text-slate-300">() </span>
+                <span className="text-slate-300">(</span>
+                <span className="text-fuchsia-400">@StructuredScope</span>
+                <span className="text-slate-300"> scope: </span>
+                <span className="text-slate-400">CoroutineScope</span>
+                <span className="text-slate-300">) </span>
                 <span className="text-slate-400">{`{`}</span>
                 {'\n'}
-                <span className="text-slate-500 italic">    // Safe, scoped concurrency</span>
-                {'\n'}
-                <span className="text-slate-300">    </span>
-                <span className="text-violet-400 font-bold">coroutineScope</span>
+                <span className="text-slate-300">    scope.</span>
+                <span className="text-violet-400 font-bold">launch</span>
                 <span className="text-slate-300"> </span>
                 <span className="text-slate-400">{`{`}</span>
                 {'\n'}
                 <span className="text-slate-300">        </span>
-                <span className="text-violet-400 font-bold">val</span>
-                <span className="text-slate-300"> user = </span>
-                <span className="text-violet-400 font-bold">async</span>
-                <span className="text-slate-300"> </span>
-                <span className="text-slate-400">{`{`}</span>
-                <span className="text-white"> api.getUser() </span>
-                <span className="text-slate-400">{`}`}</span>
-                {'\n'}
-                <span className="text-slate-300">        </span>
-                <span className="text-violet-400 font-bold">val</span>
-                <span className="text-slate-300"> sets = </span>
-                <span className="text-violet-400 font-bold">async</span>
-                <span className="text-slate-300"> </span>
-                <span className="text-slate-400">{`{`}</span>
-                <span className="text-white"> api.getSets() </span>
-                <span className="text-slate-400">{`}`}</span>
-                {'\n'}
-                <span className="text-slate-300">        </span>
-                <span className="text-white">user.await() + sets.await()</span>
+                <span className="text-white">fetchData()</span>
                 {'\n'}
                 <span className="text-slate-300">    </span>
                 <span className="text-slate-400">{`}`}</span>

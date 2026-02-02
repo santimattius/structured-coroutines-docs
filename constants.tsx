@@ -117,8 +117,7 @@ Children inherit context from their parent. Cancelling the parent cancels all ch
 - **No \`runBlocking\` inside suspend functions:** Use \`withContext(Dispatchers.IO)\` for blocking work and \`runBlocking\` only at entry points (e.g. \`main\`, tests).
 
 \`\`\`kotlin
-@StructuredScope
-class MyFeature(val scope: CoroutineScope) {
+class MyFeature(@StructuredScope val scope: CoroutineScope) {
     fun doWork() = scope.launch {
         // Managed child—cancelled when scope is cancelled
     }
@@ -173,8 +172,10 @@ class UserService(@StructuredScope private val scope: CoroutineScope) {
 
 // Class property
 class Repository {
+    
     @StructuredScope
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    
     fun fetchData() {
         scope.launch { /* ... */ }
     }
@@ -416,7 +417,7 @@ For full API docs (KDoc), see the source and published artifacts on Maven Centra
 
 Current version is not released yet. Follow the project on GitHub for release announcements.
 
-## v1.0.0 (2026-12-20)
+## v1.0.0 (2026-02-01)
 
 - Initial stable release (planned).
 - K2/FIR Compiler Plugin with 11 rules (7 error, 4 warning).
