@@ -136,7 +136,7 @@ Multiplatform annotations for marking structured coroutine scopes. The \`@Struct
 \`\`\`kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.github.santimattius:annotations:0.1.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:0.1.0")
 }
 
 // Kotlin Multiplatform (commonMain)
@@ -144,7 +144,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.santimattius:annotations:0.1.0")
+                implementation("io.github.santimattius:structured-coroutines-annotations:0.1.0")
             }
         }
     }
@@ -402,7 +402,7 @@ Rule severity is configured via the [Gradle Plugin](/docs/gradle-plugin) \`struc
 
 Detailed API documentation for the toolkit is maintained in the repository. Key artifacts:
 
-- **Annotations:** \`io.github.santimattius:annotations\` — \`@StructuredScope\` and multiplatform artifacts.
+- **Annotations:** \`io.github.santimattius:structured-coroutines-annotations\` — \`@StructuredScope\` and multiplatform artifacts.
 - **Compiler Plugin:** \`io.github.santimattius:structured-coroutines-compiler\` — K2/FIR compiler plugin.
 - **Gradle Plugin:** \`io.github.santimattius.structured-coroutines\` — Gradle integration.
 - **Detekt:** \`io.github.santimattius:structured-coroutines-detekt-rules\`
