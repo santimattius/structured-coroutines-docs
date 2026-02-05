@@ -78,25 +78,113 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ code, lang }) => {
   );
 };
 
-/** Parses inline markdown: **bold** and `code`, returns React nodes. */
+/** Parses inline markdown: **bold**, `code`, and [text](url). Returns React nodes. */
 const processInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
   const segments: React.ReactNode[] = [];
   let keyIdx = 0;
   const parts = text.split(/(`[^`]*`)/g);
-  parts.forEach((part, idx) => {
-    if (part.startsWith('`') && part.endsWith('`')) {
-      segments.push(<code key={`${keyPrefix}-${keyIdx++}`} className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-sm sm:text-base font-mono font-bold">{part.slice(1, -1)}</code>);
-      return;
-    }
+
+  const processSegment = (segment: string) => {
+    // Linked image: [![alt](imgUrl)](linkUrl) — must run before plain link
+    const linkedImageRegex = /\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g;
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
     const boldRegex = /\*\*([^*]+)\*\*/g;
-    let lastEnd = 0;
+
+    const linkedImgMatches: { index: number; length: number; alt: string; imgUrl: string; linkUrl: string }[] = [];
+    const linkMatches: { index: number; length: number; text: string; url: string }[] = [];
+    const imageMatches: { index: number; length: number; alt: string; src: string }[] = [];
+    const boldMatches: { index: number; length: number; inner: string }[] = [];
     let m;
-    while ((m = boldRegex.exec(part)) !== null) {
-      if (m.index > lastEnd) segments.push(part.slice(lastEnd, m.index));
-      segments.push(<strong key={`${keyPrefix}-${keyIdx++}`} className="font-bold text-slate-900 dark:text-white">{m[1]}</strong>);
-      lastEnd = boldRegex.lastIndex;
+    while ((m = linkedImageRegex.exec(segment)) !== null) {
+      linkedImgMatches.push({ index: m.index, length: m[0].length, alt: m[1], imgUrl: m[2], linkUrl: m[3] });
     }
-    if (lastEnd < part.length) segments.push(part.slice(lastEnd));
+    while ((m = linkRegex.exec(segment)) !== null) {
+      // Skip if this span is already covered by a linked image
+      if (!linkedImgMatches.some(li => li.index <= m!.index && m!.index < li.index + li.length)) {
+        linkMatches.push({ index: m.index, length: m[0].length, text: m[1], url: m[2] });
+      }
+    }
+    while ((m = imageRegex.exec(segment)) !== null) {
+      if (!linkedImgMatches.some(li => li.index <= m!.index && m!.index < li.index + li.length)) {
+        imageMatches.push({ index: m.index, length: m[0].length, alt: m[1], src: m[2] });
+      }
+    }
+    while ((m = boldRegex.exec(segment)) !== null) {
+      boldMatches.push({ index: m.index, length: m[0].length, inner: m[1] });
+    }
+
+    type InlineEv =
+      | { type: 'linkedImage'; index: number; length: number; alt: string; imgUrl: string; linkUrl: string }
+      | { type: 'link'; index: number; length: number; text: string; url: string }
+      | { type: 'image'; index: number; length: number; alt: string; src: string }
+      | { type: 'bold'; index: number; length: number; inner: string };
+    const sorted: InlineEv[] = [
+      ...linkedImgMatches.map((x) => ({ type: 'linkedImage' as const, ...x })),
+      ...linkMatches.map((x) => ({ type: 'link' as const, ...x })),
+      ...imageMatches.map((x) => ({ type: 'image' as const, ...x })),
+      ...boldMatches.map((x) => ({ type: 'bold' as const, ...x })),
+    ].sort((a, b) => a.index - b.index);
+
+    let lastEnd = 0;
+    for (const ev of sorted) {
+      if (ev.index < lastEnd) continue;
+      if (ev.index > lastEnd) segments.push(segment.slice(lastEnd, ev.index));
+      if (ev.type === 'linkedImage') {
+        const img = <img src={ev.imgUrl} alt={ev.alt} className="inline-block h-6 align-middle" />;
+        if (ev.linkUrl.startsWith('http')) {
+          segments.push(
+            <a key={`${keyPrefix}-${keyIdx++}`} href={ev.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex align-middle mr-2">
+              {img}
+            </a>
+          );
+        } else {
+          segments.push(
+            <Link key={`${keyPrefix}-${keyIdx++}`} to={ev.linkUrl} className="inline-flex align-middle mr-2">
+              {img}
+            </Link>
+          );
+        }
+      } else if (ev.type === 'link') {
+        if (ev.url.startsWith('http')) {
+          segments.push(
+            <a key={`${keyPrefix}-${keyIdx++}`} href={ev.url} target="_blank" rel="noopener noreferrer" className="text-primary font-bold underline hover:no-underline">
+              {ev.text}
+            </a>
+          );
+        } else {
+          segments.push(
+            <Link key={`${keyPrefix}-${keyIdx++}`} to={ev.url} className="text-primary font-bold underline hover:no-underline">
+              {ev.text}
+            </Link>
+          );
+        }
+      } else if (ev.type === 'image') {
+        segments.push(
+          <img key={`${keyPrefix}-${keyIdx++}`} src={ev.src} alt={ev.alt} className="inline-block h-6 align-middle" />
+        );
+      } else {
+        segments.push(
+          <strong key={`${keyPrefix}-${keyIdx++}`} className="font-bold text-slate-900 dark:text-white">
+            {ev.inner}
+          </strong>
+        );
+      }
+      lastEnd = ev.index + ev.length;
+    }
+    if (lastEnd < segment.length) segments.push(segment.slice(lastEnd));
+  };
+
+  parts.forEach((part) => {
+    if (part.startsWith('`') && part.endsWith('`')) {
+      segments.push(
+        <code key={`${keyPrefix}-${keyIdx++}`} className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-sm sm:text-base font-mono font-bold">
+          {part.slice(1, -1)}
+        </code>
+      );
+    } else {
+      processSegment(part);
+    }
   });
   return segments;
 };
@@ -164,7 +252,7 @@ const DocPage: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                     {tableRows[0]?.map((cell, ci) => (
-                      <th key={ci} className="p-5 text-xs font-black uppercase tracking-[0.2em] text-slate-400">{cell}</th>
+                      <th key={ci} className="p-5 text-xs font-black uppercase tracking-[0.2em] text-slate-400">{processInlineMarkdown(cell, `th-${i}-${ci}`)}</th>
                     ))}
                   </tr>
                 </thead>

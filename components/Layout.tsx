@@ -2,6 +2,22 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { SIDEBAR_NAV, DOCS_CONTENT } from '../constants';
 
+const THEME_KEY = 'docs-theme';
+type Theme = 'light' | 'dark';
+
+function getStoredTheme(): Theme {
+  if (typeof window === 'undefined') return 'light';
+  const stored = window.localStorage.getItem(THEME_KEY);
+  return stored === 'dark' ? 'dark' : 'light';
+}
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  if (theme === 'dark') root.classList.add('dark');
+  else root.classList.remove('dark');
+  window.localStorage.setItem(THEME_KEY, theme);
+}
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -9,6 +25,7 @@ interface LayoutProps {
 const ALL_DOC_ITEMS = SIDEBAR_NAV.flatMap((sec) => sec.items);
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const [theme, setTheme] = useState<Theme>(() => getStoredTheme());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -16,6 +33,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
   const isHome = location.pathname === '/';
 
@@ -166,6 +189,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               )}
             </div>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              className="flex items-center justify-center size-10 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span className="material-symbols-outlined text-[22px]">{theme === 'light' ? 'dark_mode' : 'light_mode'}</span>
+            </button>
             <Link to="/docs/introduction" className="flex items-center justify-center rounded-xl h-10 px-5 bg-primary hover:bg-primary/90 transition-all text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20">
               Start
             </Link>
