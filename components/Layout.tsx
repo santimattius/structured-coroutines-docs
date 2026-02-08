@@ -24,8 +24,12 @@ interface LayoutProps {
 
 const ALL_DOC_ITEMS = SIDEBAR_NAV.flatMap((sec) => sec.items);
 
+const GITHUB_REPO = 'santimattius/structured-coroutines';
+const GITHUB_RELEASES_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => getStoredTheme());
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -37,6 +41,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    fetch(GITHUB_RELEASES_URL)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data: { tag_name?: string }) => setLatestVersion(data?.tag_name ?? null))
+      .catch(() => setLatestVersion(null));
+  }, []);
 
   const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
@@ -144,8 +155,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <h2 className="text-xl font-black leading-tight tracking-tighter hidden sm:block italic">Structured</h2>
             </Link>
             <div className="hidden md:flex items-center gap-8">
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">Unreleased</span>
-              <a className="text-xs font-bold text-slate-500 hover:text-primary transition-all" href="https://github.com/santimattius/structured-coroutines">GitHub</a>
+              {latestVersion ? (
+                <a
+                  href={`https://github.com/${GITHUB_REPO}/releases/tag/${latestVersion}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary text-[10px] font-black uppercase tracking-widest transition-colors"
+                >
+                  {latestVersion}
+                </a>
+              ) : (
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-black uppercase tracking-widest">Unreleased</span>
+              )}
+              <a className="text-xs font-bold text-slate-500 hover:text-primary transition-all" href={`https://github.com/${GITHUB_REPO}`}>GitHub</a>
             </div>
           </div>
           
