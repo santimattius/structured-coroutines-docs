@@ -132,9 +132,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="mt-auto pt-12 pb-4">
         <div className="rounded-2xl bg-gradient-to-br from-[#1a1625] to-[#2d2a3b] p-5 text-white shadow-2xl border border-white/5">
           <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-2">Latest Release</p>
-          <p className="text-sm font-bold mb-4 leading-tight">Structured Coroutines — Coming soon</p>
-          <a href="#" className="text-xs font-bold text-primary hover:text-white transition-colors flex items-center gap-2 group">
-            Release notes 
+          <p className="text-sm font-bold mb-4 leading-tight">Structured Coroutines{latestVersion ? ` ${latestVersion}` : ' — Stable'}</p>
+          <a href={latestVersion ? `https://github.com/${GITHUB_REPO}/releases/tag/${latestVersion}` : `https://github.com/${GITHUB_REPO}/releases`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary hover:text-white transition-colors flex items-center gap-2 group">
+            Release notes
             <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </a>
         </div>

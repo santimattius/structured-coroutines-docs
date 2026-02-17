@@ -19,6 +19,8 @@ export const SIDEBAR_NAV: NavSection[] = [
       { title: "Introduction", path: "introduction", icon: "menu_book" },
       { title: "Core Concepts", path: "core-concepts", icon: "layers" },
       { title: "Rules Overview", path: "rules-overview", icon: "rule" },
+      { title: "Best Practices", path: "best-practices", icon: "checklist" },
+      { title: "Gradual Adoption", path: "gradual-adoption", icon: "trending_up" },
       { title: "Annotations", path: "annotations", icon: "tag" },
       { title: "Detekt Rules", path: "detekt-rules", icon: "verified_user" },
       { title: "IntelliJ Plugin", path: "intellij-plugin", icon: "extension" },
@@ -80,9 +82,12 @@ export const COMPARISON_DATA: ComparisonRow[] = [
   { feature: "GlobalScope Usage", compiler: "check", detekt: "check", lint: "check", ide: "check" },
   { feature: "RunBlocking in Suspend", compiler: "check", detekt: "check", lint: "check", ide: "check" },
   { feature: "Unstructured Launch", compiler: "check", detekt: "check", lint: "check", ide: "check" },
-  { feature: "Job/SupervisorJob in Builders", compiler: "check", detekt: "none", lint: "check", ide: "check" },
-  { feature: "Async without Await", compiler: "check", detekt: "none", lint: "check", ide: "check" },
+  { feature: "Job/SupervisorJob in Builders", compiler: "check", detekt: "check", lint: "check", ide: "check" },
+  { feature: "Async without Await", compiler: "check", detekt: "check", lint: "check", ide: "check" },
   { feature: "Dispatchers.Unconfined", compiler: "warning", detekt: "warning", lint: "warning", ide: "warning" },
+  { feature: "Suspend in Finally (NonCancellable)", compiler: "warning", detekt: "check", lint: "check", ide: "check" },
+  { feature: "CancellationException Swallowed", compiler: "warning", detekt: "check", lint: "check", ide: "check" },
+  { feature: "Scope Reuse After Cancel", compiler: "none", detekt: "check", lint: "check", ide: "check" },
   { feature: "MainDispatcherMisuse (Android)", compiler: "none", detekt: "none", lint: "check", ide: "check" },
   { feature: "Quick Fixes / Auto-Correction", compiler: "none", detekt: "none", lint: "check", ide: "check" },
 ];
@@ -131,7 +136,7 @@ This toolkit enforces structured concurrency best practices through:
 3. Use [Annotations](/docs/annotations) to mark scopes with \`@StructuredScope\` where needed.
 4. Optionally add [Detekt Rules](/docs/detekt-rules), [Lint Rules](/docs/lint-rules) (Android), and the [IntelliJ Plugin](/docs/intellij-plugin) for full coverage.
 
-For a high-level view of all rules, see [Rules Overview](/docs/rules-overview).
+For a high-level view of all rules, see [Rules Overview](/docs/rules-overview). For adoption in existing projects, see [Gradual Adoption](/docs/gradual-adoption). For the full checklist and rule codes, see [Best Practices](/docs/best-practices).
 `,
   "core-concepts": `
 # Core Concepts
@@ -161,7 +166,145 @@ class MyFeature(@StructuredScope val scope: CoroutineScope) {
 
 ## Framework Scopes (Auto-recognized)
 
-The compiler and IDE plugins automatically recognize: \`viewModelScope\`, \`lifecycleScope\`, \`rememberCoroutineScope()\` (see [Annotations](/docs/annotations)). For the full checklist, see the repository's \`docs/BEST_PRACTICES_COROUTINES.md\` and the [Kotlin Coroutines Skill](/docs/kotlin-coroutines-skill).
+The compiler and IDE plugins automatically recognize: \`viewModelScope\`, \`lifecycleScope\`, \`rememberCoroutineScope()\` (see [Annotations](/docs/annotations)). For the full checklist, see [Best Practices](/docs/best-practices) and the [Kotlin Coroutines Skill](/docs/kotlin-coroutines-skill).
+`,
+  "best-practices": `
+# Best Practices
+
+A concise reference for **Kotlin Coroutines** and **structured concurrency** when using the Structured Coroutines toolkit. Each practice has a **rule code** (e.g. \`SCOPE_001\`) used in compiler/IDE messages and tool documentation.
+
+## Rule Codes Reference
+
+| Code | Practice |
+|------|----------|
+| \`SCOPE_001\` | Using GlobalScope in production code |
+| \`SCOPE_002\` | Using async without calling await |
+| \`SCOPE_003\` | Breaking structured concurrency |
+| \`SCOPE_004\` | awaitAll and exception propagation |
+| \`RUNBLOCK_001\` | Redundant launch on last line of coroutineScope |
+| \`RUNBLOCK_002\` | Using runBlocking inside suspend functions |
+| \`DISPATCH_001\` | Blocking code on wrong dispatchers |
+| \`DISPATCH_002\` | Main-safe suspend functions |
+| \`DISPATCH_003\` | Abusing Dispatchers.Unconfined |
+| \`DISPATCH_004\` | Passing Job() directly to builders |
+| \`DISPATCH_005\` | Injecting Dispatchers for testability |
+| \`CANCEL_001\` | Ignoring cancellation in intensive loops |
+| \`CANCEL_002\` | Periodic or repeating work without cooperation |
+| \`CANCEL_003\` | Swallowing CancellationException |
+| \`CANCEL_004\` | Suspendable cleanup without NonCancellable |
+| \`CANCEL_005\` | Reusing a cancelled CoroutineScope |
+| \`CANCEL_006\` | withTimeout and scope cancellation |
+| \`CANCEL_007\` | withTimeout and resource cleanup |
+| \`EXCEPT_001\` | SupervisorJob as argument in single builder |
+| \`EXCEPT_002\` | Extending CancellationException for domain errors |
+| \`EXCEPT_003\` | CoroutineExceptionHandler and launch vs async |
+| \`TEST_001\` | Slow tests with real delays |
+| \`TEST_002\` | Uncontrolled fire-and-forget in tests |
+| \`TEST_003\` | Replacing Dispatchers.Main in tests |
+| \`CHANNEL_001\` | Forgetting to close manual channels |
+| \`CHANNEL_002\` | Sharing consumeEach among multiple consumers |
+| \`ARCH_001\` | General architecture recommendations |
+| \`ARCH_002\` | Lifecycle-aware Flow collection (Android) |
+| \`FLOW_001\` | Blocking code in flow { } builder |
+| \`FLOW_002\` | Cold vs hot flows (StateFlow / SharedFlow) |
+| \`FLOW_003\` | collectLatest cancels previous work |
+| \`FLOW_004\` | SharedFlow configuration |
+
+## Key Practices by Category
+
+**1. Scopes and builders:** Use framework or injected scopes; avoid \`GlobalScope\`. Use \`async\` only when you need a return value; otherwise use \`launch\`. Keep structured concurrency: inside suspend functions use \`coroutineScope { }\` + \`launch\`/\`async\`.
+
+**2. runBlocking:** Use only at entry points (main, tests). Never use \`runBlocking\` inside suspend functions; use \`withContext(Dispatchers.IO)\` for blocking work.
+
+**3. Dispatchers:** Use \`Dispatchers.Default\` for CPU-bound work, \`Dispatchers.Main\` for UI, \`withContext(Dispatchers.IO)\` for blocking I/O. Avoid \`Dispatchers.Unconfined\` in production. Do not pass \`Job()\` or \`SupervisorJob()\` to builders; use \`supervisorScope { }\` or a scope with \`SupervisorJob\`.
+
+**4. Cancellation:** Add cooperation points (\`yield()\`, \`ensureActive()\`, \`delay()\`) in long loops. Never swallow \`CancellationException\` in catch blocks. For suspend calls in \`finally\`, use \`withContext(NonCancellable) { }\`. Do not reuse a scope after \`scope.cancel()\`; use \`cancelChildren()\` if you need to keep the scope.
+
+**5. Exceptions:** Use \`SupervisorJob\` at scope level or \`supervisorScope { }\`, not as an argument to a single builder. Use normal \`Exception\`/ \`RuntimeException\` for domain errors, not \`CancellationException\`.
+
+**6. Testing:** Use \`runTest\`, virtual time, and \`TestDispatcher\`; avoid real \`delay()\` with \`runBlocking\`.
+
+**7. Channels:** Prefer \`produce { }\`; if using manual \`Channel\`, define when \`close()\` is called. Do not share \`consumeEach\` across multiple consumers.
+
+**8. Architecture (Android):** Collect Flow with \`repeatOnLifecycle(Lifecycle.State.STARTED)\` or \`flowWithLifecycle\`.
+
+**9. Flow:** Do not perform blocking calls inside \`flow { }\`; use \`flowOn(Dispatchers.IO)\` or suspend APIs. Use StateFlow for state and SharedFlow for events with appropriate replay/buffer.
+
+## Quick Reference Checklist
+
+- No \`GlobalScope\`; use framework or injected scopes
+- \`async\` has corresponding \`await\`
+- Structured concurrency maintained; no \`runBlocking\` in suspend
+- Blocking I/O on \`Dispatchers.IO\`; suspend functions main-safe
+- No \`Dispatchers.Unconfined\` in production
+- No \`Job()\`/\`SupervisorJob()\` passed to builders
+- Loops have cancellation checks; \`CancellationException\` not swallowed
+- Suspend cleanup uses \`withContext(NonCancellable)\`
+- Cancelled scopes not reused
+- Tests use \`runTest\` and virtual time
+- Channels closed; \`consumeEach\` single consumer only
+- (Android) Flow collection with \`repeatOnLifecycle(STARTED)\`
+
+## Tool Coverage
+
+The **Compiler Plugin**, **Detekt**, **Android Lint**, and **IntelliJ Plugin** implement subsets of these practices. Rule codes appear in diagnostics and link to this reference. See [Rules Overview](/docs/rules-overview) and each tool's documentation for which rules are enforced.
+`,
+  "gradual-adoption": `
+# Gradual Adoption Guide
+
+This guide helps you adopt the Structured Coroutines plugin in an existing codebase **without breaking the build**. It covers **profiles** (relaxed → gradual → strict), **excluding** source sets or projects, and **suppression** best practices.
+
+## Step-by-step path: Relaxed → Gradual → Strict
+
+| Step | Profile | Goal |
+|------|---------|------|
+| **1. Relaxed / Gradual** | \`useGradualProfile()\` or \`useRelaxedProfile()\` | Enable the plugin with **all rules as warnings**. Build succeeds; you see findings in IDE and CI. |
+| **2. Fix and suppress** | Same | Fix violations where possible; use \`@Suppress\` for justified exceptions. |
+| **3. Strict** | \`useStrictProfile()\` | Once the codebase is clean, switch to strict so new violations fail the build. |
+
+**Enable without breaking the build:**
+
+\`\`\`kotlin
+plugins {
+    kotlin("jvm") version "2.3.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
+}
+structuredCoroutines {
+    useGradualProfile()  // All warnings; no build failure
+}
+\`\`\`
+
+**Move to strict when ready:**
+
+\`\`\`kotlin
+structuredCoroutines {
+    useStrictProfile()   // 7 rules error, 4 warning; violations block the build
+}
+\`\`\`
+
+## Excluding legacy code
+
+**Exclude source sets:** \`excludeSourceSets("legacyMain", "test")\` — names match compilation names (\`main\`, \`test\`, \`jvmMain\`, \`commonMain\`).
+
+**Exclude projects:** \`excludeProjects(":legacy-app", ":experimental")\` — use Gradle project paths.
+
+Use exclusions when you cannot fix or suppress yet. Prefer fixing or suppressing so the whole codebase stays under the same rules; document why a module is excluded.
+
+## Suppression best practices
+
+- Suppress at the **narrowest scope** and **document why**.
+- Use the correct suppression ID per tool (see repository \`SUPPRESSING_RULES.md\` when available).
+- Avoid blanket or multi-rule suppression when a single targeted suppress would suffice.
+
+## Checklist for migration
+
+- [ ] Apply the plugin with \`useGradualProfile()\` (or \`useRelaxedProfile()\`).
+- [ ] Optionally exclude legacy modules or source sets with \`excludeSourceSets\` / \`excludeProjects\`.
+- [ ] Run the build; fix or suppress reported violations and document suppressions.
+- [ ] Align Detekt / Android Lint with the same rules and severities if you use them.
+- [ ] When ready, switch to \`useStrictProfile()\` so new violations fail the build.
+
+See [Gradle Plugin](/docs/gradle-plugin) for full configuration (profiles and exclusions).
 `,
   "rules-overview": `
 # Rules Overview
@@ -178,11 +321,11 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 
 ## Detekt Rules (Static Analysis)
 
-**Compiler Plugin rules (5):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass.
+**Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only rules (4):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield.
+**Detekt-only (5):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel.
 
-**Total: 9 rules.** See [Detekt Rules](/docs/detekt-rules).
+**Total: 15 rules.** See [Detekt Rules](/docs/detekt-rules).
 
 ## Android Lint Rules (Static Analysis)
 
@@ -196,7 +339,7 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 
 ## IntelliJ/Android Studio Plugin (Real-time)
 
-**11 inspections** (4 error, 7 warning), **9 quick fixes**, **5 intentions**, **gutter icons** (scope type and dispatcher context), and the **Structured Coroutines tool window** (View → Tool Windows → Structured Coroutines). See [IntelliJ Plugin](/docs/intellij-plugin).
+**12 inspections** (including CancellationExceptionSubclass), **9 quick fixes**, **5 intentions**, **gutter icons** (scope type and dispatcher context), and the **Structured Coroutines tool window** (View → Tool Windows → Structured Coroutines). See [IntelliJ Plugin](/docs/intellij-plugin).
 
 ## Comparison
 
@@ -205,7 +348,9 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 | Compiler Plugin | Compile | ✅ 7 | ✅ 4 | ✅ | ❌ |
 | Detekt Rules | Analysis | ✅ 3 | ✅ 6 | ✅ | ❌ |
 | Android Lint | Analysis | ✅ 9 | ✅ 8 | ✅ | ❌ |
-| IDE Plugin | Editing | ✅ 4 | ✅ 7 | ❌ | ✅ |
+| IDE Plugin | Editing | ✅ 4 | ✅ 8 | ❌ | ✅ |
+
+For adoption in existing projects without breaking the build, see [Gradual Adoption](/docs/gradual-adoption). For rule codes and a full checklist, see [Best Practices](/docs/best-practices).
 `,
   "annotations": `
 # Annotations
@@ -217,7 +362,7 @@ Multiplatform annotations for marking structured coroutine scopes. The \`@Struct
 \`\`\`kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:0.1.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:0.3.0")
 }
 
 // Kotlin Multiplatform (commonMain)
@@ -225,7 +370,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.santimattius:structured-coroutines-annotations:0.1.0")
+                implementation("io.github.santimattius:structured-coroutines-annotations:0.3.0")
             }
         }
     }
@@ -280,7 +425,7 @@ JVM, JS, iOS, macOS, watchOS, tvOS, Linux, Windows, WASM. Use the \`annotations\
   "detekt-rules": `
 # Detekt Rules
 
-Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 9 rules** (5 from Compiler Plugin + 4 Detekt-only). Use for multiplatform projects and CI/CD.
+Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 15 rules** (10 compiler-plugin parity + 5 Detekt-only). Use for multiplatform projects and CI/CD.
 
 ## Installation
 
@@ -289,44 +434,35 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 }
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.1.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.3.0")
 }
 \`\`\`
 
 ## Rules Overview
 
-**Compiler Plugin rules (5):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass.
+**Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only rules (4):** BlockingCallInCoroutine (JVM; exclude commonMain/iosMain if needed), RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield.
+**Detekt-only (5):** BlockingCallInCoroutine (JVM; exclude commonMain/iosMain if needed), RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel.
 
 | Rule | Category | Description |
 |------|----------|-------------|
 | GlobalScopeUsage | Compiler Plugin | \`GlobalScope.launch/async\` |
-| InlineCoroutineScope | Compiler Plugin | \`CoroutineScope(...).launch/async\` and property init |
+| InlineCoroutineScope | Compiler Plugin | \`CoroutineScope(...).launch/async\` |
 | RunBlockingInSuspend | Compiler Plugin | \`runBlocking\` in suspend |
 | DispatchersUnconfined | Compiler Plugin | \`Dispatchers.Unconfined\` |
 | CancellationExceptionSubclass | Compiler Plugin | Extending \`CancellationException\` |
+| CancellationExceptionSwallowed | Compiler Plugin | \`catch(Exception)\` swallowing cancellation |
+| JobInBuilderContext | Compiler Plugin | \`Job()\`/\`SupervisorJob()\` in builders |
+| RedundantLaunchInCoroutineScope | Compiler Plugin | Single \`launch\` in \`coroutineScope\`/\`supervisorScope\` |
+| SuspendInFinally | Compiler Plugin | Suspend in \`finally\` without NonCancellable |
+| UnusedDeferred | Compiler Plugin | \`async\` without \`await\` |
 | BlockingCallInCoroutine | Detekt-Only | Thread.sleep, JDBC, sync HTTP in coroutines |
 | RunBlockingWithDelayInTest | Detekt-Only | \`runBlocking\` + \`delay\` in tests |
 | ExternalScopeLaunch | Detekt-Only | Launch on external scope from suspend |
 | LoopWithoutYield | Detekt-Only | Loops without cooperation points |
+| ScopeReuseAfterCancel | Detekt-Only | \`scope.cancel()\` then \`scope.launch\`/\`async\` |
 
-## Configuration
-
-\`\`\`yaml
-structured-coroutines:
-  GlobalScopeUsage:
-    active: true
-    severity: error
-  InlineCoroutineScope:
-    active: true
-    severity: error
-  BlockingCallInCoroutine:
-    active: true
-    excludes: ['commonMain', 'iosMain']
-\`\`\`
-
-Run: \`./gradlew detekt\`. Full docs: [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/main/detekt-rules/README.md).
+Run: \`./gradlew detekt\`. Full config and per-rule details: [Detekt Rules](/docs/detekt-rules) and [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md).
 `,
   "intellij-plugin": `
 # IntelliJ / Android Studio Plugin
@@ -339,7 +475,7 @@ Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured
 - **From disk:** Download ZIP from [Releases](https://github.com/santimattius/structured-coroutines/releases) → Plugins → Install Plugin from Disk.
 - **Build locally:** \`./gradlew :intellij-plugin:buildPlugin\` then install the ZIP from \`intellij-plugin/build/distributions/\`. Run sandbox: \`./gradlew :intellij-plugin:runIde\`.
 
-## Inspections (11)
+## Inspections (12)
 
 | Inspection | Severity | Description |
 |------------|----------|-------------|
@@ -353,6 +489,7 @@ Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured
 | JobInBuilderContext | ERROR | \`Job()\`/\`SupervisorJob()\` in builders |
 | SuspendInFinally | WARNING | Suspend in finally without NonCancellable |
 | CancellationExceptionSwallowed | WARNING | \`catch(Exception)\` swallowing cancellation |
+| CancellationExceptionSubclass | ERROR | Classes extending \`CancellationException\` |
 | DispatchersUnconfined | WARNING | \`Dispatchers.Unconfined\` |
 
 ## Structured Coroutines Tool Window
@@ -379,7 +516,7 @@ Scope type (viewModelScope, lifecycleScope, GlobalScope, etc.) and dispatcher co
   "gradle-plugin": `
 # Gradle Plugin
 
-Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. All **11 rules** are configurable as \`error\` or \`warning\`.
+Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. All **11 rules** are configurable as \`error\` or \`warning\`. From **v0.3.0** you can use **profiles** and **exclude** source sets or projects.
 
 ## Installation
 
@@ -397,16 +534,47 @@ pluginManagement {
 // build.gradle.kts
 plugins {
     kotlin("jvm") version "2.3.0"   // Kotlin 2.3+ (K2) required
-    id("io.github.santimattius.structured-coroutines") version "0.1.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
 }
 
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:0.1.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:0.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }
 \`\`\`
 
-## Configuration
+## Profiles (strict / gradual / relaxed)
+
+Apply a preset with one line:
+
+\`\`\`kotlin
+structuredCoroutines {
+    useStrictProfile()   // Default: 7 error, 4 warning (greenfield)
+    // useGradualProfile()  // All rules warning (migration)
+    // useRelaxedProfile()   // Same as gradual
+}
+\`\`\`
+
+| Profile | When to use | Effect |
+|---------|--------------|--------|
+| **Strict** | New projects or fail build on violations | 7 rules → error, 4 → warning |
+| **Gradual** / **Relaxed** | Migrating; build must not fail | All 11 rules → **warning** |
+
+See [Gradual Adoption](/docs/gradual-adoption) for the full migration path.
+
+## Excluding source sets and projects
+
+\`\`\`kotlin
+structuredCoroutines {
+    useGradualProfile()
+    excludeSourceSets("legacyMain", "test")
+    excludeProjects(":legacy-module", ":app:oldFeature")
+}
+\`\`\`
+
+Source set names match compilation names (\`main\`, \`test\`, \`jvmMain\`, \`commonMain\`). Project paths use Gradle format (\`:subproject\`, \`:app:lib\`).
+
+## Per-rule configuration
 
 \`\`\`kotlin
 structuredCoroutines {
@@ -431,7 +599,7 @@ structuredCoroutines {
 | Error (default) | 7 | GlobalScope, inline scope, unstructured launch, runBlocking in suspend, Job() in builders, CancellationException subclass, async without await |
 | Warning (default) | 4 | Dispatchers.Unconfined, suspend in finally, CancellationException swallowed, redundant launch in coroutineScope |
 
-Supports **JVM** and **Kotlin Multiplatform**. For KMP, apply \`kotlin(\"multiplatform\")\` and add annotations in \`commonMain\`. See [gradle-plugin/README.md](https://github.com/santimattius/structured-coroutines/blob/main/gradle-plugin/README.md) for KMP setup and troubleshooting.
+Supports **JVM** and **Kotlin Multiplatform**. For KMP, apply \`kotlin(\"multiplatform\")\` and add annotations in \`commonMain\`. See [gradle-plugin/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/gradle-plugin/README.md) for KMP setup and troubleshooting.
 `,
   "lint-rules": `
 # Android Lint Rules
@@ -443,7 +611,7 @@ Custom Android Lint rules for structured concurrency and **Android-specific** de
 \`\`\`kotlin
 // build.gradle.kts (Android module)
 dependencies {
-    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.1.0")
+    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.3.0")
 }
 \`\`\`
 
@@ -477,7 +645,7 @@ viewModelScope.launch(Dispatchers.Main) {
 }
 \`\`\`
 
-Run: \`./gradlew lint\`. Reports: \`app/build/reports/lint-results.html\`. Full docs: [lint-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/main/lint-rules/README.md).
+Run: \`./gradlew lint\`. Reports: \`app/build/reports/lint-results.html\`. Full docs: [lint-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/lint-rules/README.md).
 `,
   "compiler": `
 # Compiler Plugin
@@ -518,7 +686,7 @@ The plugin uses the K2/FIR API to detect:
 - Kotlin 2.3.0+ (K2)
 - Gradle 8.0+
 
-The **sample** project includes a \`compilation\` package with one example per compiler rule (7 errors, 4 warnings) for testing. See [compiler/README.md](https://github.com/santimattius/structured-coroutines/blob/main/compiler/README.md).
+The **sample** project includes a \`compilation\` package with one example per compiler rule (7 errors, 4 warnings) for testing. See [compiler/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/compiler/README.md).
 `,
   "kotlin-coroutines-skill": `
 # Kotlin Coroutines Agent Skill
@@ -548,7 +716,7 @@ References cover: GlobalScope, async without await, breaking structured concurre
 - **Cursor:** Create a rule in \`.cursor/rules/\` (e.g. \`kotlin-coroutines-skill.md\`) with the content of \`SYSTEM_PROMPT.md\`; use globs \`**/*.kt\` if supported.
 - **Claude Code (Plugin):** \`claude --plugin-dir /path/to/structured-coroutines/kotlin-coroutines-skill\`.
 
-Full instructions: [kotlin-coroutines-skill/README.md](https://github.com/santimattius/structured-coroutines/blob/main/kotlin-coroutines-skill/README.md).
+Full instructions: [kotlin-coroutines-skill/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/kotlin-coroutines-skill/README.md).
 `,
   "api": `
 # API Reference
@@ -560,10 +728,10 @@ Key artifacts and documentation are maintained in the repository:
 | \`io.github.santimattius:structured-coroutines-annotations\` | \`@StructuredScope\`, multiplatform |
 | \`io.github.santimattius:structured-coroutines-compiler\` | K2/FIR compiler plugin |
 | \`io.github.santimattius.structured-coroutines\` (Gradle) | Gradle plugin |
-| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (9) |
+| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (15) |
 | \`io.github.santimattius:structured-coroutines-lint-rules\` | Android Lint rules (17) |
 
-**Module docs:** [Gradle Plugin](https://github.com/santimattius/structured-coroutines/blob/main/gradle-plugin/README.md), [Detekt](https://github.com/santimattius/structured-coroutines/blob/main/detekt-rules/README.md), [Lint](https://github.com/santimattius/structured-coroutines/blob/main/lint-rules/README.md), [IntelliJ](https://github.com/santimattius/structured-coroutines/blob/main/intellij-plugin/README.md), [Annotations](https://github.com/santimattius/structured-coroutines/blob/main/annotations/README.md), [Compiler](https://github.com/santimattius/structured-coroutines/blob/main/compiler/README.md), [Kotlin Coroutines Skill](https://github.com/santimattius/structured-coroutines/blob/main/kotlin-coroutines-skill/README.md).
+**Module docs** (repository [features/0.3.0](https://github.com/santimattius/structured-coroutines/tree/features/0.3.0)): [Gradle Plugin](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/gradle-plugin/README.md), [Detekt](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md), [Lint](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/lint-rules/README.md), [IntelliJ](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/intellij-plugin/README.md), [Annotations](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/annotations/README.md), [Compiler](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/compiler/README.md), [Kotlin Coroutines Skill](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/kotlin-coroutines-skill/README.md).
 
 ## External Resources
 
@@ -579,12 +747,17 @@ Key artifacts and documentation are maintained in the repository:
 
 ## Unreleased${latestGitTag ? ` (latest: ${latestGitTag})` : ''}
 
-- **Compiler:** \`CancellationExceptionSwallowed\` now detects \`catch(Exception)\` inside **suspend lambdas** (e.g. \`scope.launch { try { } catch (e: Exception) { } }\`), not only in suspend functions.
-- **IntelliJ plugin:** Correct detection of \`@StructuredScope\` on parameters and properties; new **Structured Coroutines** tool window (View → Tool Windows) to list and navigate all findings for the current file.
-- **Sample:** New \`compilation\` package with one subpackage per compiler check (7 errors, 4 warnings) for testing and documentation.
-- **New:** \`kotlin-coroutines-skill/\` package for AI/agent-driven coroutine best practices.
+See repository for ongoing changes.
 
-See [CHANGES_SINCE_0.1.0.md](https://github.com/santimattius/structured-coroutines/blob/main/CHANGES_SINCE_0.1.0.md) in the repo for full details.
+## v0.3.0
+
+- **Gradle Plugin — Profiles:** \`useStrictProfile()\`, \`useGradualProfile()\`, \`useRelaxedProfile()\` to apply presets (strict: 7 error, 4 warning; gradual/relaxed: all 11 rules as warning for migration).
+- **Gradle Plugin — Exclusions:** \`excludeSourceSets("legacyMain", "test")\` and \`excludeProjects(":legacy-module")\` to disable the compiler plugin for specific compilations or projects.
+- **Documentation — Gradual adoption guide:** Step-by-step path (relaxed → gradual → strict), excluding legacy code, suppression best practices.
+- **Detekt Rules — 15 rules:** Full parity with compiler plugin (10 rules) plus Detekt-only: BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, **ScopeReuseAfterCancel**. Full \`detekt.yml\` snippet in docs.
+- **Android Lint — 17 issues:** All compiler-parity rules, Android-specific (MainDispatcherMisuse, ViewModelScopeLeak, LifecycleAwareScope), and ScopeReuseAfterCancel.
+- **IntelliJ Plugin — 12 inspections,** 9 quick fixes, 5 intentions; tool window and line markers; **CancellationExceptionSubclass** inspection added.
+- **New module: sample-detekt** — Validates Detekt rules (15 example files, \`./gradlew :sample-detekt:detekt\` for 15 findings).
 
 ## v0.1.0
 

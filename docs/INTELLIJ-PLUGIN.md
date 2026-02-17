@@ -68,18 +68,21 @@ The plugin provides four main feature categories:
 
 ### Overview
 
+The following **12 inspections** are registered and run in the IDE:
+
 | Inspection | Severity | Description |
 |------------|----------|-------------|
 | GlobalScopeUsage | ERROR | Detects `GlobalScope.launch/async` |
 | MainDispatcherMisuse | WARNING | Detects blocking code on `Dispatchers.Main` |
 | ScopeReuseAfterCancel | WARNING | Detects scope cancelled then reused |
 | RunBlockingInSuspend | ERROR | Detects `runBlocking` in suspend functions |
-| UnstructuredLaunch | WARNING | Detects launch without structured scope |
+| UnstructuredLaunch | ERROR | Detects launch without structured scope |
 | AsyncWithoutAwait | WARNING | Detects `async` without `await()` |
 | InlineCoroutineScope | ERROR | Detects `CoroutineScope(...).launch` |
 | JobInBuilderContext | ERROR | Detects `Job()`/`SupervisorJob()` in builders |
 | SuspendInFinally | WARNING | Detects suspend calls in finally without NonCancellable |
 | CancellationExceptionSwallowed | WARNING | Detects `catch(Exception)` swallowing cancellation |
+| CancellationExceptionSubclass | ERROR | Detects classes extending `CancellationException` |
 | DispatchersUnconfined | WARNING | Detects `Dispatchers.Unconfined` usage |
 
 ### Detailed Inspection Descriptions
@@ -228,16 +231,14 @@ suspend fun work() {
 
 ## Quick Fixes
 
-Each inspection provides one or more quick fixes accessible via Alt+Enter (or the lightbulb icon):
+Each inspection provides one or more **quick fixes** (9 quick-fix types) accessible via Alt+Enter (or the lightbulb icon):
 
 | Quick Fix | Applies To |
 |-----------|------------|
-| Replace GlobalScope with viewModelScope | GlobalScopeUsage |
-| Replace GlobalScope with lifecycleScope | GlobalScopeUsage |
-| Replace GlobalScope with coroutineScope { } | GlobalScopeUsage |
+| Replace GlobalScope with proper scope (viewModelScope / lifecycleScope / coroutineScope) | GlobalScopeUsage |
 | Wrap with withContext(Dispatchers.IO) | MainDispatcherMisuse |
 | Replace cancel() with cancelChildren() | ScopeReuseAfterCancel |
-| Remove runBlocking | RunBlockingInSuspend |
+| Remove or replace runBlocking | RunBlockingInSuspend |
 | Add .await() | AsyncWithoutAwait |
 | Convert async to launch | AsyncWithoutAwait |
 | Wrap with withContext(NonCancellable) | SuspendInFinally |
@@ -248,7 +249,7 @@ Each inspection provides one or more quick fixes accessible via Alt+Enter (or th
 
 ## Intentions
 
-Intentions are available via Alt+Enter when the cursor is on relevant code:
+**5 intentions** are available via Alt+Enter when the cursor is on relevant code:
 
 ### Migrate to viewModelScope
 
@@ -612,6 +613,14 @@ Include:
 ---
 
 ## Version History
+
+### v0.3.0
+
+- **12 inspections** (including CancellationExceptionSubclass)
+- 9 quick fixes: ReplaceGlobalScope, RemoveRunBlocking, AddAwait, AddCancellationExceptionCatch, ReplaceJobWithSupervisorScope, WrapWithIODispatcher, ConvertAsyncToLaunch, ReplaceCancelWithCancelChildren, WrapWithNonCancellable
+- 5 intentions: WrapWithCoroutineScope, MigrateToLifecycleScope, MigrateToViewModelScope, ExtractSuspendFunction, ConvertLaunchToAsync
+- Tool window (Structured Coroutines), line markers for scope and dispatcher context
+- Full K2 mode support
 
 ### v0.1.0
 

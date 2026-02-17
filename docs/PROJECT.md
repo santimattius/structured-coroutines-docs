@@ -214,11 +214,11 @@ pluginManagement {
 // build.gradle.kts
 plugins {
     kotlin("jvm") version "2.3.0"
-    id("io.github.santimattius.structured-coroutines") version "0.1.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
 }
 
 dependencies {
-    implementation("io.github.santimattius:annotations:0.1.0")
+    implementation("io.github.santimattius:annotations:0.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }
 ```
@@ -232,7 +232,7 @@ plugins {
 }
 
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.1.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.3.0")
 }
 ```
 
@@ -241,7 +241,7 @@ dependencies {
 ```kotlin
 // build.gradle.kts (Android project)
 dependencies {
-    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.1.0")
+    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.3.0")
 }
 ```
 
@@ -268,7 +268,7 @@ Or install manually:
 ```kotlin
 plugins {
     kotlin("multiplatform") version "2.3.0"
-    id("io.github.santimattius.structured-coroutines") version "0.1.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
 }
 
 kotlin {
@@ -280,7 +280,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.santimattius:annotations:0.1.0")
+                implementation("io.github.santimattius:annotations:0.3.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             }
         }

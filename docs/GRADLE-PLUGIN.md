@@ -6,6 +6,8 @@ Gradle plugin that integrates the Structured Coroutines Kotlin Compiler Plugin f
 
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Profiles (strict / gradual / relaxed)](#profiles-strict--gradual--relaxed)
+- [Excluding source sets and projects](#excluding-source-sets-and-projects)
 - [Rules Overview](#rules-overview)
 - [Usage Examples](#usage-examples)
 - [Kotlin Multiplatform Support](#kotlin-multiplatform-support)
@@ -29,9 +31,9 @@ This publishes artifacts to `~/.m2/repository/`:
 
 | Artifact | Purpose |
 |----------|---------|
-| `io.github.santimattius:annotations:0.1.0` | Annotations (`@StructuredScope`) - Multiplatform |
-| `io.github.santimattius:structured-coroutines-compiler:0.1.0` | Kotlin Compiler Plugin |
-| `io.github.santimattius.structured-coroutines:...gradle.plugin:0.1.0` | Gradle Plugin |
+| `io.github.santimattius:annotations:0.3.0` | Annotations (`@StructuredScope`) - Multiplatform |
+| `io.github.santimattius:structured-coroutines-compiler:0.3.0` | Kotlin Compiler Plugin |
+| `io.github.santimattius.structured-coroutines:...gradle.plugin:0.3.0` | Gradle Plugin |
 
 ### 2. Configure Repositories
 
@@ -63,12 +65,12 @@ dependencyResolutionManagement {
 ```kotlin
 plugins {
     kotlin("jvm") version "2.3.0"  // Requires Kotlin 2.0+
-    id("io.github.santimattius.structured-coroutines") version "0.1.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
 }
 
 dependencies {
     // Annotations for @StructuredScope
-    implementation("io.github.santimattius:annotations:0.1.0")
+    implementation("io.github.santimattius:annotations:0.3.0")
 
     // Coroutines dependency
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
@@ -111,6 +113,71 @@ structuredCoroutines {
 
 ---
 
+## Profiles (strict / gradual / relaxed)
+
+You can apply a preset instead of configuring each rule individually. This is especially useful for new projects (strict) or when migrating legacy code (gradual/relaxed).
+
+```kotlin
+structuredCoroutines {
+    useStrictProfile()   // Default: 7 error, 4 warning (greenfield)
+    // useGradualProfile()  // All rules warning (migration)
+    // useRelaxedProfile()   // Same as gradual
+}
+```
+
+| Profile   | When to use | Effect |
+|-----------|--------------|--------|
+| **Strict**  | New projects or when you want the build to fail on violations | 7 rules → error, 4 rules → warning (defaults) |
+| **Gradual** | Migrating legacy code; build must not fail while you fix issues | All 11 rules → **warning** |
+| **Relaxed** | Same as gradual; see findings without blocking the build | All 11 rules → **warning** |
+
+**Severity per rule by profile:**
+
+| Rule                              | Strict | Gradual / Relaxed |
+|-----------------------------------|--------|-------------------|
+| `globalScopeUsage`                | error  | warning           |
+| `inlineCoroutineScope`            | error  | warning           |
+| `unstructuredLaunch`              | error  | warning           |
+| `runBlockingInSuspend`            | error  | warning           |
+| `jobInBuilderContext`             | error  | warning           |
+| `cancellationExceptionSubclass`   | error  | warning           |
+| `unusedDeferred`                  | error  | warning           |
+| `dispatchersUnconfined`           | warning| warning           |
+| `suspendInFinally`                | warning| warning           |
+| `cancellationExceptionSwallowed`  | warning| warning           |
+| `redundantLaunchInCoroutineScope` | warning| warning           |
+
+---
+
+## Excluding source sets and projects
+
+During migration you can disable the compiler plugin for specific source sets or entire projects so legacy code does not fail the build.
+
+**Exclude by source set (compilation name):**
+
+```kotlin
+structuredCoroutines {
+    useGradualProfile()
+    excludeSourceSets("legacyMain", "test")  // "main", "test", "jvmMain", etc.
+}
+```
+
+**Exclude by project path:**
+
+```kotlin
+structuredCoroutines {
+    excludeProjects(":legacy-module", ":app:oldFeature")
+}
+```
+
+- **Source set names** match Kotlin compilation names (e.g. `main`, `test`, `jvmMain`, `commonMain`). Excluded compilations do not run the plugin.
+- **Project paths** use Gradle path format (e.g. `:subproject`, `:app:lib`). All compilations of that project are excluded.
+- When the plugin is applied to the root only, exclusion lists are read from the root extension. When applied per project, each project's extension is used.
+
+For a full migration path (relaxed → gradual → strict) and suppression best practices, see the [Gradual adoption guide](GRADUAL_ADOPTION.md).
+
+---
+
 ## Rules Overview
 
 ### Summary Table
@@ -140,6 +207,29 @@ structuredCoroutines {
 ---
 
 ## Usage Examples
+
+### Using a profile
+
+**New project (strict):** one line applies the default strict behavior.
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.3.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
+}
+
+structuredCoroutines {
+    useStrictProfile()
+}
+```
+
+**Legacy project (gradual):** all rules as warnings so the build does not fail while you fix issues.
+
+```kotlin
+structuredCoroutines {
+    useGradualProfile()
+}
+```
 
 ### Using @StructuredScope
 
@@ -253,7 +343,7 @@ The plugin fully supports Kotlin Multiplatform projects.
 ```kotlin
 plugins {
     kotlin("multiplatform") version "2.3.0"
-    id("io.github.santimattius.structured-coroutines") version "0.1.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
 }
 
 kotlin {
@@ -269,7 +359,7 @@ kotlin {
         commonMain {
             dependencies {
                 // Multiplatform annotations
-                implementation("io.github.santimattius:annotations:0.1.0")
+                implementation("io.github.santimattius:annotations:0.3.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             }
         }
@@ -394,10 +484,10 @@ structuredCoroutines {
 
 ```kotlin
 // For JVM projects
-implementation("io.github.santimattius:annotations:0.1.0")
+implementation("io.github.santimattius:annotations:0.3.0")
 
 // For KMP projects (in commonMain)
-implementation("io.github.santimattius:annotations:0.1.0")
+implementation("io.github.santimattius:annotations:0.3.0")
 ```
 
 ### Verify Maven Local
@@ -443,11 +533,11 @@ dependencyResolutionManagement {
 ```kotlin
 plugins {
     kotlin("jvm") version "2.3.0"
-    id("io.github.santimattius.structured-coroutines") version "0.1.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
 }
 
 dependencies {
-    implementation("io.github.santimattius:annotations:0.1.0")
+    implementation("io.github.santimattius:annotations:0.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }
 
@@ -508,7 +598,7 @@ dependencyResolutionManagement {
 ```kotlin
 plugins {
     kotlin("multiplatform") version "2.3.0"
-    id("io.github.santimattius.structured-coroutines") version "0.1.0"
+    id("io.github.santimattius.structured-coroutines") version "0.3.0"
 }
 
 kotlin {
@@ -519,7 +609,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.santimattius:annotations:0.1.0")
+                implementation("io.github.santimattius:annotations:0.3.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             }
         }

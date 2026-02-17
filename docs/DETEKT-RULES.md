@@ -31,7 +31,7 @@ plugins {
 
 ```kotlin
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.1.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.3.0")
 }
 ```
 
@@ -56,46 +56,46 @@ Create or update your `detekt.yml` configuration file:
 
 ```yaml
 structured-coroutines:
-
-  # ============================================
-  # Compiler Plugin Rules
-  # ============================================
-
   GlobalScopeUsage:
     active: true
     severity: error
-
   InlineCoroutineScope:
     active: true
     severity: error
-
   RunBlockingInSuspend:
     active: true
     severity: warning
-
   DispatchersUnconfined:
     active: true
     severity: warning
-
   CancellationExceptionSubclass:
     active: true
     severity: error
-
-  # ============================================
-  # Detekt-Only Rules (Static Analysis)
-  # ============================================
-
+  CancellationExceptionSwallowed:
+    active: true
+    severity: warning
+  JobInBuilderContext:
+    active: true
+    severity: warning
+  RedundantLaunchInCoroutineScope:
+    active: true
+    severity: warning
+  SuspendInFinally:
+    active: true
+    severity: warning
+  UnusedDeferred:
+    active: true
+    severity: warning
   BlockingCallInCoroutine:
     active: true
     excludes: ['commonMain', 'iosMain', 'jsMain']
-
   RunBlockingWithDelayInTest:
     active: true
-
   ExternalScopeLaunch:
     active: true
-
   LoopWithoutYield:
+    active: true
+  ScopeReuseAfterCancel:
     active: true
 ```
 
@@ -112,24 +112,38 @@ structured-coroutines:
 | `RunBlockingInSuspend` | Compiler Plugin | Warning | Detects `runBlocking` in suspend functions |
 | `DispatchersUnconfined` | Compiler Plugin | Warning | Detects `Dispatchers.Unconfined` usage |
 | `CancellationExceptionSubclass` | Compiler Plugin | Error | Detects classes extending `CancellationException` |
-| `BlockingCallInCoroutine` | Detekt-Only | Warning | Detects blocking calls inside coroutines |
-| `RunBlockingWithDelayInTest` | Detekt-Only | Warning | Detects `runBlocking` + `delay` in tests |
-| `ExternalScopeLaunch` | Detekt-Only | Warning | Detects launch on external scopes from suspend functions |
-| `LoopWithoutYield` | Detekt-Only | Warning | Detects loops without cooperation points |
+| `CancellationExceptionSwallowed` | Compiler Plugin | Warning | Detects `catch(Exception)` that may swallow `CancellationException` |
+| `JobInBuilderContext` | Compiler Plugin | Warning | Detects `Job()`/`SupervisorJob()` passed to launch/async/withContext |
+| `RedundantLaunchInCoroutineScope` | Compiler Plugin | Warning | Detects single `launch` inside `coroutineScope`/`supervisorScope` |
+| `SuspendInFinally` | Compiler Plugin | Warning | Detects suspend calls in `finally` without `withContext(NonCancellable)` |
+| `UnusedDeferred` | Compiler Plugin | Warning | Detects `async` result never awaited |
+| `BlockingCallInCoroutine` | Detekt-Only | — | Detects blocking calls (e.g. `Thread.sleep`, JDBC) inside coroutines |
+| `RunBlockingWithDelayInTest` | Detekt-Only | — | Detects `runBlocking` + `delay` in tests (suggests `runTest`) |
+| `ExternalScopeLaunch` | Detekt-Only | — | Detects launch on external scopes from suspend functions |
+| `LoopWithoutYield` | Detekt-Only | — | Detects loops without cooperation points (yield, ensureActive, delay) |
+| `ScopeReuseAfterCancel` | Detekt-Only | — | Detects `scope.cancel()` followed by `scope.launch`/`scope.async` |
+
+**Total: 15 rules** in the `structured-coroutines` rule set.
 
 ### Best Practices Reference
 
-| Rule | Best Practice |
-|------|---------------|
-| `GlobalScopeUsage` | 1.1 - Using GlobalScope in Production Code |
-| `InlineCoroutineScope` | 1.3 - Breaking Structured Concurrency |
-| `RunBlockingInSuspend` | 2.2 - Using runBlocking Inside Suspend Functions |
-| `DispatchersUnconfined` | 3.2 - Abusing Dispatchers.Unconfined |
-| `CancellationExceptionSubclass` | 5.2 - Extending CancellationException for Domain Errors |
-| `BlockingCallInCoroutine` | 3.1 - Mixing Blocking Code with Wrong Dispatchers |
-| `RunBlockingWithDelayInTest` | 6.1 - Slow Tests with Real Delays |
-| `ExternalScopeLaunch` | 1.3 - Breaking Structured Concurrency |
-| `LoopWithoutYield` | 4.1 - Ignoring Cancellation in Intensive Loops |
+| Rule | Best Practice / Code |
+|------|----------------------|
+| `GlobalScopeUsage` | 1.1 / SCOPE_001 |
+| `InlineCoroutineScope` | 1.3 / SCOPE_003 |
+| `RunBlockingInSuspend` | 2.2 / RUNBLOCK_002 |
+| `DispatchersUnconfined` | 3.3 / DISPATCH_003 |
+| `CancellationExceptionSubclass` | 5.2 / EXCEPT_002 |
+| `CancellationExceptionSwallowed` | 4.3 / CANCEL_003 |
+| `JobInBuilderContext` | 3.4 / DISPATCH_004 |
+| `RedundantLaunchInCoroutineScope` | 2.1 / RUNBLOCK_001 |
+| `SuspendInFinally` | 4.4 / CANCEL_004 |
+| `UnusedDeferred` | 1.2 / SCOPE_002 |
+| `BlockingCallInCoroutine` | 3.1 / DISPATCH_001 |
+| `RunBlockingWithDelayInTest` | 6.1 / TEST_001 |
+| `ExternalScopeLaunch` | 1.3 / SCOPE_003 |
+| `LoopWithoutYield` | 4.1 / CANCEL_001 |
+| `ScopeReuseAfterCancel` | 4.5 / CANCEL_005 |
 
 ---
 
@@ -319,11 +333,112 @@ suspend fun process() {
 
 ---
 
+### 6. CancellationExceptionSwallowed
+
+**Detects:** `catch(Exception)` that may swallow `CancellationException` in coroutine context.
+
+```kotlin
+// ⚠️ WARNING - May swallow cancellation
+suspend fun bad() {
+    try { work() }
+    catch (e: Exception) { log(e) }
+}
+
+// ✅ GOOD - Explicit CancellationException handling
+suspend fun good() {
+    try { work() }
+    catch (e: CancellationException) { throw e }
+    catch (e: Exception) { log(e) }
+}
+```
+
+**Severity:** Warning
+
+---
+
+### 7. JobInBuilderContext
+
+**Detects:** `Job()` or `SupervisorJob()` passed directly to `launch`, `async`, or `withContext`.
+
+```kotlin
+// ❌ BAD - Job() breaks structured concurrency
+scope.launch(Job()) { doWork() }
+
+// ✅ GOOD - Use supervisorScope
+suspend fun process() = supervisorScope {
+    launch { task1() }
+    launch { task2() }
+}
+```
+
+**Severity:** Warning (configurable)
+
+---
+
+### 8. RedundantLaunchInCoroutineScope
+
+**Detects:** A single `launch { }` inside `coroutineScope { }` or `supervisorScope { }` where the body could run directly.
+
+```kotlin
+// ⚠️ WARNING - Redundant launch
+suspend fun bad() = coroutineScope {
+    launch { work() }
+}
+
+// ✅ GOOD - Direct execution
+suspend fun good() = coroutineScope {
+    work()
+}
+```
+
+**Severity:** Warning (configurable)
+
+---
+
+### 9. SuspendInFinally
+
+**Detects:** Suspend calls in `finally` blocks without `withContext(NonCancellable)`.
+
+```kotlin
+// ⚠️ WARNING - Suspend in finally without NonCancellable
+try { doWork() } finally {
+    saveToDb()  // May not complete if cancelled
+}
+
+// ✅ GOOD - Wrapped in NonCancellable
+try { doWork() } finally {
+    withContext(NonCancellable) { saveToDb() }
+}
+```
+
+**Severity:** Warning (configurable)
+
+---
+
+### 10. UnusedDeferred
+
+**Detects:** `async { }` result never awaited.
+
+```kotlin
+// ❌ BAD - async without await
+scope.async { computeValue() }
+
+// ✅ GOOD - await the result
+val result = scope.async { computeValue() }.await()
+
+// ✅ GOOD - Use launch if result not needed
+scope.launch { computeValue() }
+```
+
+**Severity:** Warning (configurable)
+
+---
+
 ## Detekt-Only Rules
 
 These rules are only available as Detekt Rules because they require static analysis that is not possible at compile time.
 
-### 6. BlockingCallInCoroutine
+### 11. BlockingCallInCoroutine
 
 **Detects:** Blocking calls inside coroutines.
 
@@ -359,7 +474,7 @@ scope.launch {
 
 ---
 
-### 7. RunBlockingWithDelayInTest
+### 12. RunBlockingWithDelayInTest
 
 **Detects:** `runBlocking` with `delay()` in test files.
 
@@ -387,7 +502,7 @@ fun `test something`() = runTest {
 
 ---
 
-### 8. ExternalScopeLaunch
+### 13. ExternalScopeLaunch
 
 **Detects:** Launch on external scope from suspend functions.
 
@@ -421,7 +536,7 @@ class MyService(private val scope: CoroutineScope) {
 
 ---
 
-### 9. LoopWithoutYield
+### 14. LoopWithoutYield
 
 **Detects:** Loops without cooperation points in suspend functions.
 
@@ -456,6 +571,28 @@ suspend fun processItems(items: List<Item>) {
 - `delay()`
 - `suspendCancellableCoroutine`
 - `withTimeout()` / `withTimeoutOrNull()`
+
+---
+
+### 15. ScopeReuseAfterCancel
+
+**Detects:** `scope.cancel()` followed by `scope.launch` or `scope.async` (reusing a cancelled scope).
+
+```kotlin
+// ❌ BAD - Scope cancelled and then reused
+fun process(scope: CoroutineScope) {
+    scope.cancel()
+    scope.launch { work() }  // Silently fails
+}
+
+// ✅ GOOD - Use cancelChildren() to keep scope usable
+fun process(scope: CoroutineScope) {
+    scope.coroutineContext.job.cancelChildren()
+    scope.launch { work() }
+}
+```
+
+**Severity:** Configurable
 
 ---
 

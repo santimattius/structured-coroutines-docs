@@ -39,7 +39,7 @@ plugins {
 ```kotlin
 // build.gradle.kts (Android module)
 dependencies {
-    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.1.0")
+    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.3.0")
 }
 ```
 
