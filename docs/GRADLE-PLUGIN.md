@@ -101,6 +101,7 @@ structuredCoroutines {
     suspendInFinally.set("warning")                    // Default: "warning"
     cancellationExceptionSwallowed.set("warning")      // Default: "warning"
     redundantLaunchInCoroutineScope.set("warning")     // Default: "warning"
+    loopWithoutYield.set("warning")                     // Default: "warning" (v0.4.0, CANCEL_001)
 }
 ```
 
@@ -127,9 +128,9 @@ structuredCoroutines {
 
 | Profile   | When to use | Effect |
 |-----------|--------------|--------|
-| **Strict**  | New projects or when you want the build to fail on violations | 7 rules → error, 4 rules → warning (defaults) |
-| **Gradual** | Migrating legacy code; build must not fail while you fix issues | All 11 rules → **warning** |
-| **Relaxed** | Same as gradual; see findings without blocking the build | All 11 rules → **warning** |
+| **Strict**  | New projects or when you want the build to fail on violations | 7 rules → error, 5 rules → warning (defaults) |
+| **Gradual** | Migrating legacy code; build must not fail while you fix issues | All 12 rules → **warning** |
+| **Relaxed** | Same as gradual; see findings without blocking the build | All 12 rules → **warning** |
 
 **Severity per rule by profile:**
 
@@ -146,6 +147,7 @@ structuredCoroutines {
 | `suspendInFinally`                | warning| warning           |
 | `cancellationExceptionSwallowed`  | warning| warning           |
 | `redundantLaunchInCoroutineScope` | warning| warning           |
+| `loopWithoutYield`                | warning| warning           |
 
 ---
 
@@ -195,14 +197,15 @@ For a full migration path (relaxed → gradual → strict) and suppression best 
 | `suspendInFinally` | Warning | Detects suspend in finally without `NonCancellable` |
 | `cancellationExceptionSwallowed` | Warning | Detects `catch(Exception)` swallowing cancellation |
 | `redundantLaunchInCoroutineScope` | Warning | Detects redundant launch in `coroutineScope` |
+| `loopWithoutYield` | Warning | Detects loops in suspend without cooperation points (CANCEL_001, v0.4.0) |
 
 ### Rules Count
 
 | Severity | Count |
 |----------|-------|
 | Error (default) | 7 |
-| Warning (default) | 4 |
-| **Total** | **11** |
+| Warning (default) | 5 |
+| **Total** | **12** |
 
 ---
 

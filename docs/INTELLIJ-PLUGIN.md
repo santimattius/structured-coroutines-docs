@@ -68,22 +68,24 @@ The plugin provides four main feature categories:
 
 ### Overview
 
-The following **12 inspections** are registered and run in the IDE:
+The following **14 inspections** are registered and run in the IDE:
 
 | Inspection | Severity | Description |
 |------------|----------|-------------|
 | GlobalScopeUsage | ERROR | Detects `GlobalScope.launch/async` |
 | MainDispatcherMisuse | WARNING | Detects blocking code on `Dispatchers.Main` |
-| ScopeReuseAfterCancel | WARNING | Detects scope cancelled then reused |
+| ScopeReuseAfterCancel | WARNING | Detects scope cancelled then reused (CANCEL_005); quick fix: replace cancel with cancelChildren |
 | RunBlockingInSuspend | ERROR | Detects `runBlocking` in suspend functions |
 | UnstructuredLaunch | ERROR | Detects launch without structured scope |
-| AsyncWithoutAwait | WARNING | Detects `async` without `await()` |
+| AsyncWithoutAwait | WARNING | Detects `async` without `await()` (excludes `awaitAll`) |
 | InlineCoroutineScope | ERROR | Detects `CoroutineScope(...).launch` |
 | JobInBuilderContext | ERROR | Detects `Job()`/`SupervisorJob()` in builders |
 | SuspendInFinally | WARNING | Detects suspend calls in finally without NonCancellable |
 | CancellationExceptionSwallowed | WARNING | Detects `catch(Exception)` swallowing cancellation |
-| CancellationExceptionSubclass | ERROR | Detects classes extending `CancellationException` |
+| CancellationExceptionSubclass | ERROR | Detects classes extending `CancellationException` (quick fix: change superclass to Exception) |
 | DispatchersUnconfined | WARNING | Detects `Dispatchers.Unconfined` usage |
+| **LoopWithoutYield** | WARNING | Loops in suspend without cooperation points (CANCEL_001); quick fixes: ensureActive, yield, delay(0) |
+| **LifecycleAwareFlowCollection** | WARNING | Flow collection in `lifecycleScope.launch` without `repeatOnLifecycle`/`flowWithLifecycle` (ARCH_002) |
 
 ### Detailed Inspection Descriptions
 
@@ -231,7 +233,7 @@ suspend fun work() {
 
 ## Quick Fixes
 
-Each inspection provides one or more **quick fixes** (9 quick-fix types) accessible via Alt+Enter (or the lightbulb icon):
+Each inspection provides one or more quick fixes accessible via Alt+Enter (or the lightbulb icon):
 
 | Quick Fix | Applies To |
 |-----------|------------|
@@ -244,12 +246,14 @@ Each inspection provides one or more **quick fixes** (9 quick-fix types) accessi
 | Wrap with withContext(NonCancellable) | SuspendInFinally |
 | Add CancellationException catch clause | CancellationExceptionSwallowed |
 | Replace with supervisorScope { } | JobInBuilderContext |
+| **Add cooperation point in loop** (ensureActive / yield / delay(0)) | LoopWithoutYield |
+| **Change superclass to Exception** | CancellationExceptionSubclass |
 
 ---
 
 ## Intentions
 
-**5 intentions** are available via Alt+Enter when the cursor is on relevant code:
+**6 intentions** are available via Alt+Enter when the cursor is on relevant code:
 
 ### Migrate to viewModelScope
 
@@ -317,23 +321,27 @@ scope.async { work() }
 
 **Availability:** Inside a coroutine builder lambda
 
-Extracts the lambda body into a separate suspend function:
+Extracts the lambda body into a separate suspend function.
+
+### Convert to runTest (TEST_001)
+
+**Availability:** When the cursor is inside a `runBlocking { }` call whose body contains `delay()`.
+
+Replaces `runBlocking` with `runTest` so tests use virtual time (kotlinx-coroutines-test). Use for tests that currently use real delays.
 
 ```kotlin
 // Before
-scope.launch {
-    val data = fetchData()
-    processData(data)
-    saveResult()
+@Test
+fun test() = runBlocking {
+    delay(1000)
+    assertEquals(expected, result)
 }
 
 // After
-scope.launch { performWork() }
-
-private suspend fun performWork() {
-    val data = fetchData()
-    processData(data)
-    saveResult()
+@Test
+fun test() = runTest {
+    delay(1000)  // Virtual time
+    assertEquals(expected, result)
 }
 ```
 
@@ -613,6 +621,12 @@ Include:
 ---
 
 ## Version History
+
+### v0.4.0
+
+- **14 inspections:** Added **LoopWithoutYield** (CANCEL_001) with quick fixes (ensureActive, yield, delay(0)); **LifecycleAwareFlowCollection** (ARCH_002). ScopeReuseAfterCancel messages include CANCEL_005 and doc link; AsyncWithoutAwait excludes `awaitAll`.
+- **Quick fixes:** Add cooperation point in loop; Change superclass to Exception (CancellationExceptionSubclass).
+- **6 intentions:** Added **Convert to runTest** (TEST_001) for runBlocking+delay in tests.
 
 ### v0.3.0
 

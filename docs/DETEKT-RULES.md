@@ -97,6 +97,12 @@ structured-coroutines:
     active: true
   ScopeReuseAfterCancel:
     active: true
+  ChannelNotClosed:
+    active: true
+  ConsumeEachMultipleConsumers:
+    active: true
+  FlowBlockingCall:
+    active: true
 ```
 
 ---
@@ -122,8 +128,11 @@ structured-coroutines:
 | `ExternalScopeLaunch` | Detekt-Only | — | Detects launch on external scopes from suspend functions |
 | `LoopWithoutYield` | Detekt-Only | — | Detects loops without cooperation points (yield, ensureActive, delay) |
 | `ScopeReuseAfterCancel` | Detekt-Only | — | Detects `scope.cancel()` followed by `scope.launch`/`scope.async` |
+| `ChannelNotClosed` | Detekt-Only | — | Manual `Channel()` without `close()` (CHANNEL_001) |
+| `ConsumeEachMultipleConsumers` | Detekt-Only | — | Same Channel with `consumeEach` from multiple coroutines (CHANNEL_002) |
+| `FlowBlockingCall` | Detekt-Only | — | Blocking calls inside `flow { }` (FLOW_001) |
 
-**Total: 15 rules** in the `structured-coroutines` rule set.
+**Total: 18 rules** in the `structured-coroutines` rule set.
 
 ### Best Practices Reference
 
@@ -144,6 +153,9 @@ structured-coroutines:
 | `ExternalScopeLaunch` | 1.3 / SCOPE_003 |
 | `LoopWithoutYield` | 4.1 / CANCEL_001 |
 | `ScopeReuseAfterCancel` | 4.5 / CANCEL_005 |
+| `ChannelNotClosed` | 7.1 / CHANNEL_001 |
+| `ConsumeEachMultipleConsumers` | 7.2 / CHANNEL_002 |
+| `FlowBlockingCall` | 9.1 / FLOW_001 |
 
 ---
 
@@ -593,6 +605,66 @@ fun process(scope: CoroutineScope) {
 ```
 
 **Severity:** Configurable
+
+---
+
+### 16. ChannelNotClosed (CHANNEL_001)
+
+**Detects:** Manual `Channel()` creation without a corresponding `close()` call.
+
+```kotlin
+// ❌ BAD - Channel never closed
+val channel = Channel<Int>()
+launch { channel.send(1) }
+
+// ✅ GOOD - Use produce { } (closes automatically)
+val channel = produce { send(1) }
+
+// ✅ GOOD - Document when/where manual channel is closed
+val channel = Channel<Int>()
+// Closed in cleanup() when scope cancels
+```
+
+**Severity:** Configurable. Recommends `produce { }` or documenting when channels are closed.
+
+---
+
+### 17. ConsumeEachMultipleConsumers (CHANNEL_002)
+
+**Detects:** The same Channel used with `consumeEach` from multiple coroutines (fan-out anti-pattern).
+
+```kotlin
+// ❌ BAD - consumeEach cancels channel; breaks other consumers
+launch { channel.consumeEach { } }
+launch { channel.consumeEach { } }
+
+// ✅ GOOD - One consumer per channel with for loop
+launch { for (x in channel) { } }
+launch { for (x in channel) { } }
+```
+
+**Severity:** Configurable. Recommends `for (value in channel)` per consumer for fan-out.
+
+---
+
+### 18. FlowBlockingCall (FLOW_001)
+
+**Detects:** Blocking calls (Thread.sleep, synchronous I/O, JDBC, etc.) inside `flow { }` builder.
+
+```kotlin
+// ❌ BAD - Blocking inside flow
+flow {
+    Thread.sleep(1000)
+    emit(loadFromJdbc())
+}
+
+// ✅ GOOD - flowOn or suspend APIs
+flow {
+    emit(loadFromDb())  // suspend function
+}.flowOn(Dispatchers.IO)
+```
+
+**Severity:** Warning. Recommends `flowOn(Dispatchers.IO)` or suspend APIs. Message includes [FLOW_001] and doc link.
 
 ---
 

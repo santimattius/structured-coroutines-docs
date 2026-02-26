@@ -93,6 +93,10 @@ Configure Android Lint rules in `lint.xml`:
     <issue id="RunBlockingWithDelayInTest" severity="warning" />
     <issue id="LoopWithoutYield" severity="warning" />
     <issue id="ScopeReuseAfterCancel" severity="warning" />
+    <issue id="ChannelNotClosed" severity="warning" />
+    <issue id="ConsumeEachMultipleConsumers" severity="warning" />
+    <issue id="FlowBlockingCall" severity="warning" />
+    <issue id="LifecycleAwareFlowCollection" severity="warning" />
 </lint>
 ```
 
@@ -121,6 +125,10 @@ Configure Android Lint rules in `lint.xml`:
 | `RunBlockingWithDelayInTest` | Additional | Warning | Detects `runBlocking` + `delay` in tests |
 | `LoopWithoutYield` | Additional | Warning | Detects loops without cooperation points |
 | `ScopeReuseAfterCancel` | Additional | Warning | Detects cancelled scope reuse |
+| `ChannelNotClosed` | Additional | Warning | Manual `Channel()` without `close()` (CHANNEL_001) |
+| `ConsumeEachMultipleConsumers` | Additional | Warning | Same Channel with `consumeEach` from multiple coroutines (CHANNEL_002) |
+| `FlowBlockingCall` | Additional | Warning | Blocking calls inside `flow { }` (FLOW_001) |
+| `LifecycleAwareFlowCollection` | Additional | Warning | Flow collection in `lifecycleScope.launch` without `repeatOnLifecycle`/`flowWithLifecycle` (ARCH_002) |
 
 ### Rules Count by Category
 
@@ -128,8 +136,8 @@ Configure Android Lint rules in `lint.xml`:
 |----------|-------|
 | Compiler Plugin Rules | 9 |
 | Android-Specific Rules | 3 |
-| Additional Rules | 5 |
-| **Total** | **17** |
+| Additional Rules | 9 |
+| **Total** | **21** |
 
 ---
 
@@ -570,6 +578,38 @@ fun process(scope: CoroutineScope) {
 **Severity:** Warning (configurable)
 
 **Note:** This is a heuristic rule. Only detects obvious cases in the same function. Complex cases requiring flow analysis are not detected.
+
+---
+
+### 18. ChannelNotClosed (CHANNEL_001)
+
+**Detects:** Manual `Channel()` creation without a corresponding `close()` call. Recommends `produce { }` or documenting when channels are closed.
+
+**Severity:** Warning (configurable)
+
+---
+
+### 19. ConsumeEachMultipleConsumers (CHANNEL_002)
+
+**Detects:** The same Channel used with `consumeEach` from multiple coroutines. Recommends `for (value in channel)` per consumer for fan-out.
+
+**Severity:** Warning (configurable)
+
+---
+
+### 20. FlowBlockingCall (FLOW_001)
+
+**Detects:** Blocking calls (Thread.sleep, synchronous I/O, JDBC, etc.) inside `flow { }` builder. Recommends `flowOn(Dispatchers.IO)` or suspend APIs. Report includes [FLOW_001] and doc link.
+
+**Severity:** Warning (configurable)
+
+---
+
+### 21. LifecycleAwareFlowCollection (ARCH_002)
+
+**Detects:** Flow collection (`collect`, `collectLatest`) inside `lifecycleScope.launch` (or `launchWhenStarted`/`launchWhenCreated`/`launchWhenResumed`) without `repeatOnLifecycle` or `flowWithLifecycle`. Guides to use `repeatOnLifecycle(Lifecycle.State.STARTED)` or `flowWithLifecycle` so collection is tied to lifecycle.
+
+**Severity:** Warning (configurable)
 
 ---
 

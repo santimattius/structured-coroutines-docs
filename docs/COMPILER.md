@@ -24,10 +24,11 @@ compiler/
     ├── SuspendInFinallyChecker.kt                  # Suspend in finally
     ├── CancellationExceptionSwallowedChecker.kt    # catch(Exception) swallowing
     ├── UnusedDeferredChecker.kt                    # async without await
-    └── RedundantLaunchInCoroutineScopeChecker.kt   # Redundant launch
+    ├── RedundantLaunchInCoroutineScopeChecker.kt   # Redundant launch
+    └── LoopWithoutYieldChecker.kt                   # Loops without cooperation points (CANCEL_001)
 ```
 
-## Checkers (11 Rules)
+## Checkers (12 Rules)
 
 | Checker | Rule | Default Severity |
 |---------|------|------------------|
@@ -40,17 +41,19 @@ compiler/
 | `CancellationExceptionSubclassChecker` | Extending CancellationException | Error |
 | `SuspendInFinallyChecker` | Suspend in finally | Warning |
 | `CancellationExceptionSwallowedChecker` | catch(Exception) swallowing | Warning |
-| `UnusedDeferredChecker` | async without await | Error |
-| `RedundantLaunchInCoroutineScopeChecker` | Redundant launch | Warning |
+| `UnusedDeferredChecker` | async without await (excludes awaitAll) | Error |
+| `RedundantLaunchInCoroutineScopeChecker` | Redundant launch (skips forEach/for/while) | Warning |
+| `LoopWithoutYieldChecker` | Loops in suspend without cooperation points (CANCEL_001) | Warning |
 
 ## Configuration
 
-All rules support configurable severity via the Gradle Plugin:
+All rules support configurable severity via the Gradle Plugin. The **LoopWithoutYield** checker (CANCEL_001) can be enabled or disabled via `loopWithoutYield`:
 
 ```kotlin
 structuredCoroutines {
     globalScopeUsage.set("error")     // or "warning"
     dispatchersUnconfined.set("warning")
+    loopWithoutYield.set("warning")   // CANCEL_001; enable/disable loops-without-cooperation check
     // ... other rules
 }
 ```

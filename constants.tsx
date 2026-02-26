@@ -72,7 +72,7 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "Compiler Plugin",
-    description: "K2/FIR Compiler Plugin with 11 rules. Enforces structured concurrency at compile time (7 errors, 4 warnings).",
+    description: "K2/FIR Compiler Plugin with 12 rules. Enforces structured concurrency at compile time (7 errors, 5 warnings).",
     icon: "memory",
     path: "/docs/compiler"
   }
@@ -87,7 +87,12 @@ export const COMPARISON_DATA: ComparisonRow[] = [
   { feature: "Dispatchers.Unconfined", compiler: "warning", detekt: "warning", lint: "warning", ide: "warning" },
   { feature: "Suspend in Finally (NonCancellable)", compiler: "warning", detekt: "check", lint: "check", ide: "check" },
   { feature: "CancellationException Swallowed", compiler: "warning", detekt: "check", lint: "check", ide: "check" },
+  { feature: "Loop without Yield (CANCEL_001)", compiler: "warning", detekt: "check", lint: "check", ide: "check" },
   { feature: "Scope Reuse After Cancel", compiler: "none", detekt: "check", lint: "check", ide: "check" },
+  { feature: "Channel not Closed (CHANNEL_001)", compiler: "none", detekt: "check", lint: "check", ide: "none" },
+  { feature: "ConsumeEach Multiple Consumers (CHANNEL_002)", compiler: "none", detekt: "check", lint: "check", ide: "none" },
+  { feature: "Flow Blocking Call (FLOW_001)", compiler: "none", detekt: "check", lint: "check", ide: "none" },
+  { feature: "Lifecycle-Aware Flow Collection (Android)", compiler: "none", detekt: "none", lint: "check", ide: "check" },
   { feature: "MainDispatcherMisuse (Android)", compiler: "none", detekt: "none", lint: "check", ide: "check" },
   { feature: "Quick Fixes / Auto-Correction", compiler: "none", detekt: "none", lint: "check", ide: "check" },
 ];
@@ -315,17 +320,17 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 
 **Errors (block compilation):** \`GLOBAL_SCOPE_USAGE\`, \`INLINE_COROUTINE_SCOPE\`, \`UNSTRUCTURED_COROUTINE_LAUNCH\`, \`RUN_BLOCKING_IN_SUSPEND\`, \`JOB_IN_BUILDER_CONTEXT\`, \`CANCELLATION_EXCEPTION_SUBCLASS\`, \`UNUSED_DEFERRED\`.
 
-**Warnings (allow compilation):** \`DISPATCHERS_UNCONFINED_USAGE\`, \`SUSPEND_IN_FINALLY_WITHOUT_NON_CANCELLABLE\`, \`CANCELLATION_EXCEPTION_SWALLOWED\`, \`REDUNDANT_LAUNCH_IN_COROUTINE_SCOPE\`.
+**Warnings (allow compilation):** \`DISPATCHERS_UNCONFINED_USAGE\`, \`SUSPEND_IN_FINALLY_WITHOUT_NON_CANCELLABLE\`, \`CANCELLATION_EXCEPTION_SWALLOWED\`, \`REDUNDANT_LAUNCH_IN_COROUTINE_SCOPE\`, \`LOOP_WITHOUT_YIELD\` (CANCEL_001; configurable via Gradle \`loopWithoutYield\`).
 
-**Total: 11 rules** (7 errors, 4 warnings). Configured via [Gradle Plugin](/docs/gradle-plugin).
+**Total: 12 rules** (7 errors, 5 warnings). Configured via [Gradle Plugin](/docs/gradle-plugin).
 
 ## Detekt Rules (Static Analysis)
 
 **Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only (5):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel.
+**Detekt-only (8):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001).
 
-**Total: 15 rules.** See [Detekt Rules](/docs/detekt-rules).
+**Total: 18 rules.** See [Detekt Rules](/docs/detekt-rules).
 
 ## Android Lint Rules (Static Analysis)
 
@@ -333,22 +338,22 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 
 **Android-specific (3):** MainDispatcherMisuse, ViewModelScopeLeak, LifecycleAwareScope.
 
-**Additional (5):** UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel.
+**Additional (9):** UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001), **LifecycleAwareFlowCollection** (ARCH_002).
 
-**Total: 17 rules.** See [Lint Rules](/docs/lint-rules).
+**Total: 21 issues.** See [Lint Rules](/docs/lint-rules).
 
 ## IntelliJ/Android Studio Plugin (Real-time)
 
-**12 inspections** (including CancellationExceptionSubclass), **9 quick fixes**, **5 intentions**, **gutter icons** (scope type and dispatcher context), and the **Structured Coroutines tool window** (View → Tool Windows → Structured Coroutines). See [IntelliJ Plugin](/docs/intellij-plugin).
+**14 inspections** (including LoopWithoutYield, LifecycleAwareFlowCollection), **quick fixes** (including cooperation point in loops, replace cancel with cancelChildren, change superclass to Exception), **6 intentions** (including **Convert to runTest** for TEST_001), **gutter icons**, and the **Structured Coroutines tool window**. See [IntelliJ Plugin](/docs/intellij-plugin).
 
 ## Comparison
 
 | Approach | When | Errors | Warnings | CI | Real-time |
 |----------|------|--------|----------|-----|-----------|
-| Compiler Plugin | Compile | ✅ 7 | ✅ 4 | ✅ | ❌ |
-| Detekt Rules | Analysis | ✅ 3 | ✅ 6 | ✅ | ❌ |
-| Android Lint | Analysis | ✅ 9 | ✅ 8 | ✅ | ❌ |
-| IDE Plugin | Editing | ✅ 4 | ✅ 8 | ❌ | ✅ |
+| Compiler Plugin | Compile | ✅ 7 | ✅ 5 | ✅ | ❌ |
+| Detekt Rules | Analysis | — | ✅ 18 | ✅ | ❌ |
+| Android Lint | Analysis | — | ✅ 21 | ✅ | ❌ |
+| IDE Plugin | Editing | — | ✅ 14 | ❌ | ✅ |
 
 For adoption in existing projects without breaking the build, see [Gradual Adoption](/docs/gradual-adoption). For rule codes and a full checklist, see [Best Practices](/docs/best-practices).
 `,
@@ -425,7 +430,7 @@ JVM, JS, iOS, macOS, watchOS, tvOS, Linux, Windows, WASM. Use the \`annotations\
   "detekt-rules": `
 # Detekt Rules
 
-Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 15 rules** (10 compiler-plugin parity + 5 Detekt-only). Use for multiplatform projects and CI/CD.
+Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 18 rules** (10 compiler-plugin parity + 8 Detekt-only). Use for multiplatform projects and CI/CD.
 
 ## Installation
 
@@ -434,7 +439,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 }
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.3.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.4.0")
 }
 \`\`\`
 
@@ -442,7 +447,7 @@ dependencies {
 
 **Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only (5):** BlockingCallInCoroutine (JVM; exclude commonMain/iosMain if needed), RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel.
+**Detekt-only (8):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001).
 
 | Rule | Category | Description |
 |------|----------|-------------|
@@ -453,16 +458,19 @@ dependencies {
 | CancellationExceptionSubclass | Compiler Plugin | Extending \`CancellationException\` |
 | CancellationExceptionSwallowed | Compiler Plugin | \`catch(Exception)\` swallowing cancellation |
 | JobInBuilderContext | Compiler Plugin | \`Job()\`/\`SupervisorJob()\` in builders |
-| RedundantLaunchInCoroutineScope | Compiler Plugin | Single \`launch\` in \`coroutineScope\`/\`supervisorScope\` |
+| RedundantLaunchInCoroutineScope | Compiler Plugin | Single \`launch\` in \`coroutineScope\`/\`supervisorScope\` (skips forEach/for/while) |
 | SuspendInFinally | Compiler Plugin | Suspend in \`finally\` without NonCancellable |
-| UnusedDeferred | Compiler Plugin | \`async\` without \`await\` |
+| UnusedDeferred | Compiler Plugin | \`async\` without \`await\` (excludes \`awaitAll\`) |
 | BlockingCallInCoroutine | Detekt-Only | Thread.sleep, JDBC, sync HTTP in coroutines |
 | RunBlockingWithDelayInTest | Detekt-Only | \`runBlocking\` + \`delay\` in tests |
 | ExternalScopeLaunch | Detekt-Only | Launch on external scope from suspend |
 | LoopWithoutYield | Detekt-Only | Loops without cooperation points |
 | ScopeReuseAfterCancel | Detekt-Only | \`scope.cancel()\` then \`scope.launch\`/\`async\` |
+| ChannelNotClosed | Detekt-Only | Manual \`Channel()\` without \`close()\` (CHANNEL_001) |
+| ConsumeEachMultipleConsumers | Detekt-Only | Same Channel with \`consumeEach\` from multiple coroutines (CHANNEL_002) |
+| FlowBlockingCall | Detekt-Only | Blocking calls inside \`flow { }\` (FLOW_001) |
 
-Run: \`./gradlew detekt\`. Full config and per-rule details: [Detekt Rules](/docs/detekt-rules) and [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md).
+Run: \`./gradlew detekt\`. Full config and per-rule details: [Detekt Rules](/docs/detekt-rules) and repository [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md).
 `,
   "intellij-plugin": `
 # IntelliJ / Android Studio Plugin
@@ -475,34 +483,36 @@ Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured
 - **From disk:** Download ZIP from [Releases](https://github.com/santimattius/structured-coroutines/releases) → Plugins → Install Plugin from Disk.
 - **Build locally:** \`./gradlew :intellij-plugin:buildPlugin\` then install the ZIP from \`intellij-plugin/build/distributions/\`. Run sandbox: \`./gradlew :intellij-plugin:runIde\`.
 
-## Inspections (12)
+## Inspections (14)
 
 | Inspection | Severity | Description |
 |------------|----------|-------------|
 | GlobalScopeUsage | ERROR | \`GlobalScope.launch/async\` |
 | MainDispatcherMisuse | WARNING | Blocking code on \`Dispatchers.Main\` |
-| ScopeReuseAfterCancel | WARNING | Scope cancelled then reused |
+| ScopeReuseAfterCancel | WARNING | Scope cancelled then reused (CANCEL_005; quick fix: cancelChildren) |
 | RunBlockingInSuspend | ERROR | \`runBlocking\` in suspend |
 | UnstructuredLaunch | WARNING | Launch without structured scope (recognizes \`@StructuredScope\` on params/properties) |
-| AsyncWithoutAwait | WARNING | \`async\` without \`await()\` |
+| AsyncWithoutAwait | WARNING | \`async\` without \`await()\` (excludes \`awaitAll\`) |
 | InlineCoroutineScope | ERROR | \`CoroutineScope(...).launch\` |
 | JobInBuilderContext | ERROR | \`Job()\`/\`SupervisorJob()\` in builders |
 | SuspendInFinally | WARNING | Suspend in finally without NonCancellable |
 | CancellationExceptionSwallowed | WARNING | \`catch(Exception)\` swallowing cancellation |
-| CancellationExceptionSubclass | ERROR | Classes extending \`CancellationException\` |
+| CancellationExceptionSubclass | ERROR | Classes extending \`CancellationException\` (quick fix: change superclass to Exception) |
 | DispatchersUnconfined | WARNING | \`Dispatchers.Unconfined\` |
+| **LoopWithoutYield** | WARNING | Loops in suspend without cooperation points (CANCEL_001); quick fixes: ensureActive, yield, delay(0) |
+| **LifecycleAwareFlowCollection** | WARNING | Flow collection in \`lifecycleScope.launch\` without \`repeatOnLifecycle\`/\`flowWithLifecycle\` (ARCH_002) |
 
 ## Structured Coroutines Tool Window
 
 **View → Tool Windows → Structured Coroutines.** Lists all findings for the **current file**. Use **Refresh** to run inspections; **double-click** a row to jump to the issue. Correctly recognizes \`@StructuredScope\` on parameters and properties.
 
-## Quick Fixes (9)
+## Quick Fixes
 
-Replace with viewModelScope/lifecycleScope/coroutineScope; wrap with Dispatchers.IO; replace cancel with cancelChildren; remove runBlocking; add await / convert to launch; wrap with NonCancellable; add CancellationException handling; supervisorScope for Job in builder.
+Replace with viewModelScope/lifecycleScope/coroutineScope; wrap with Dispatchers.IO; **replace cancel with cancelChildren** (ScopeReuseAfterCancel); remove runBlocking; add await / convert to launch; wrap with NonCancellable; add CancellationException handling; supervisorScope for Job in builder; **add cooperation point in loop** (ensureActive, yield, delay(0)); **change superclass to Exception** (CancellationException subclass).
 
-## Intentions (5)
+## Intentions (6)
 
-Migrate to viewModelScope/lifecycleScope; wrap with coroutineScope; convert launch to async; extract suspend function.
+Migrate to viewModelScope/lifecycleScope; wrap with coroutineScope; convert launch to async; extract suspend function; **Convert to runTest** (runBlocking + delay in tests → runTest, TEST_001).
 
 ## Gutter Icons
 
@@ -516,7 +526,7 @@ Scope type (viewModelScope, lifecycleScope, GlobalScope, etc.) and dispatcher co
   "gradle-plugin": `
 # Gradle Plugin
 
-Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. All **11 rules** are configurable as \`error\` or \`warning\`. From **v0.3.0** you can use **profiles** and **exclude** source sets or projects.
+Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. **12 rules** (7 errors, 5 warnings) are configurable. From **v0.3.0** you can use **profiles** and **exclude** source sets or projects; from **v0.4.0** the **LoopWithoutYield** (CANCEL_001) checker can be enabled/disabled via \`loopWithoutYield\`.
 
 ## Installation
 
@@ -589,6 +599,7 @@ structuredCoroutines {
     suspendInFinally.set("warning")
     cancellationExceptionSwallowed.set("warning")
     redundantLaunchInCoroutineScope.set("warning")
+    loopWithoutYield.set("warning")  // v0.4.0: CANCEL_001, loops without cooperation points
 }
 \`\`\`
 
@@ -597,21 +608,21 @@ structuredCoroutines {
 | Severity | Count | Examples |
 |----------|-------|----------|
 | Error (default) | 7 | GlobalScope, inline scope, unstructured launch, runBlocking in suspend, Job() in builders, CancellationException subclass, async without await |
-| Warning (default) | 4 | Dispatchers.Unconfined, suspend in finally, CancellationException swallowed, redundant launch in coroutineScope |
+| Warning (default) | 5 | Dispatchers.Unconfined, suspend in finally, CancellationException swallowed, redundant launch in coroutineScope, **loop without yield** (CANCEL_001) |
 
 Supports **JVM** and **Kotlin Multiplatform**. For KMP, apply \`kotlin(\"multiplatform\")\` and add annotations in \`commonMain\`. See [gradle-plugin/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/gradle-plugin/README.md) for KMP setup and troubleshooting.
 `,
   "lint-rules": `
 # Android Lint Rules
 
-Custom Android Lint rules for structured concurrency and **Android-specific** detection. **Total: 17 rules** (9 from Compiler Plugin + 3 Android-specific + 5 additional). Run with \`./gradlew lint\`; integrate with Android Studio for real-time feedback and quick fixes.
+Custom Android Lint rules for structured concurrency and **Android-specific** detection. **Total: 21 issues** (9 from Compiler Plugin + 3 Android-specific + 9 additional). Run with \`./gradlew lint\`; integrate with Android Studio for real-time feedback and quick fixes.
 
 ## Installation
 
 \`\`\`kotlin
 // build.gradle.kts (Android module)
 dependencies {
-    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.3.0")
+    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.4.0")
 }
 \`\`\`
 
@@ -623,7 +634,7 @@ dependencies {
 |----------|-------|----------|
 | Compiler Plugin | 9 | GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, JobInBuilderContext, SuspendInFinally, CancellationExceptionSwallowed, AsyncWithoutAwait |
 | Android-Specific | 3 | **MainDispatcherMisuse** (blocking on Main → ANRs), **ViewModelScopeLeak**, **LifecycleAwareScope** |
-| Additional | 5 | UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel |
+| Additional | 9 | UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001), **LifecycleAwareFlowCollection** (ARCH_002) |
 
 Configure severity per issue id in \`lint.xml\`.
 
@@ -650,7 +661,7 @@ Run: \`./gradlew lint\`. Reports: \`app/build/reports/lint-results.html\`. Full 
   "compiler": `
 # Compiler Plugin
 
-The **K2/FIR Kotlin Compiler Plugin** enforces structured concurrency at compile time. **11 rules** (7 errors, 4 warnings). Severity is configured via the [Gradle Plugin](/docs/gradle-plugin).
+The **K2/FIR Kotlin Compiler Plugin** enforces structured concurrency at compile time. **12 rules** (7 errors, 5 warnings). Severity is configured via the [Gradle Plugin](/docs/gradle-plugin).
 
 ## Overview
 
@@ -665,9 +676,10 @@ The plugin uses the K2/FIR API to detect:
 - Suspend calls in \`finally\` without \`NonCancellable\`
 - \`catch(Exception)\` that may swallow \`CancellationException\` (including inside **suspend lambdas**, e.g. \`scope.launch { try { } catch (e: Exception) { } }\`)
 - \`async\` without \`await\`
-- Redundant \`launch\` in \`coroutineScope\`
+- Redundant \`launch\` in \`coroutineScope\` (skips when launch is inside \`forEach\`/for/while)
+- **Loops without cooperation points** (CANCEL_001): \`while\`/\`for\` in suspend functions with no \`yield\`/\`ensureActive\`/\`delay\` (configurable via \`loopWithoutYield\`)
 
-## Checkers (11 Rules)
+## Checkers (12 Rules)
 
 | Checker | Default | Description |
 |---------|---------|-------------|
@@ -678,8 +690,9 @@ The plugin uses the K2/FIR API to detect:
 | CancellationExceptionSubclassChecker | Error | Extending CancellationException |
 | SuspendInFinallyChecker | Warning | Suspend in finally |
 | CancellationExceptionSwallowedChecker | Warning | catch(Exception) in suspend context |
-| UnusedDeferredChecker | Error | async without await |
+| UnusedDeferredChecker | Error | async without await (excludes Deferred in awaitAll) |
 | RedundantLaunchInCoroutineScopeChecker | Warning | Redundant launch in coroutineScope |
+| LoopWithoutYieldChecker | Warning | Loops in suspend without cooperation points (CANCEL_001) |
 
 ## Requirements
 
@@ -728,8 +741,8 @@ Key artifacts and documentation are maintained in the repository:
 | \`io.github.santimattius:structured-coroutines-annotations\` | \`@StructuredScope\`, multiplatform |
 | \`io.github.santimattius:structured-coroutines-compiler\` | K2/FIR compiler plugin |
 | \`io.github.santimattius.structured-coroutines\` (Gradle) | Gradle plugin |
-| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (15) |
-| \`io.github.santimattius:structured-coroutines-lint-rules\` | Android Lint rules (17) |
+| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (18) |
+| \`io.github.santimattius:structured-coroutines-lint-rules\` | Android Lint rules (21) |
 
 **Module docs** (repository [features/0.3.0](https://github.com/santimattius/structured-coroutines/tree/features/0.3.0)): [Gradle Plugin](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/gradle-plugin/README.md), [Detekt](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md), [Lint](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/lint-rules/README.md), [IntelliJ](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/intellij-plugin/README.md), [Annotations](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/annotations/README.md), [Compiler](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/compiler/README.md), [Kotlin Coroutines Skill](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/kotlin-coroutines-skill/README.md).
 
@@ -748,6 +761,14 @@ Key artifacts and documentation are maintained in the repository:
 ## Unreleased${latestGitTag ? ` (latest: ${latestGitTag})` : ''}
 
 See repository for ongoing changes.
+
+## v0.4.0
+
+- **Compiler — LoopWithoutYield (CANCEL_001):** New \`LOOP_WITHOUT_YIELD\` warning for loops in suspend functions without cooperation points (yield, ensureActive, delay). Configurable via Gradle \`loopWithoutYield\`.
+- **Detekt — 18 rules:** Added **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001). Channel rules recommend \`produce { }\` or \`for (x in channel)\`; Flow rule reports blocking calls inside \`flow { }\` with link to FLOW_001.
+- **Android Lint — 21 issues:** Same channel and Flow rules plus **LifecycleAwareFlowCollection** (ARCH_002): Flow collection in \`lifecycleScope.launch\` without \`repeatOnLifecycle\`/\`flowWithLifecycle\`.
+- **IntelliJ — 14 inspections, 6 intentions:** New **LoopWithoutYieldInspection** with quick fixes (ensureActive, yield, delay(0)); **LifecycleAwareFlowCollectionInspection**; **Convert to runTest** intention (TEST_001). **ChangeSuperclassToExceptionQuickFix** for CancellationException subclass. ScopeReuseAfterCancel messages aligned with CANCEL_005 and doc link.
+- **Improvements:** SCOPE_002 (UnusedDeferred/AsyncWithoutAwait) no longer triggers when Deferred is used in \`awaitAll\`. RUNBLOCK_001 (RedundantLaunchInCoroutineScope) no longer triggers when the single \`launch\` is inside \`forEach\`/for/while.
 
 ## v0.3.0
 
