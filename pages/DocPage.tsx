@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { DOCS_CONTENT, SIDEBAR_NAV } from '../constants';
 
@@ -78,14 +78,69 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ code, lang }) => {
   );
 };
 
-/** Parses inline markdown: **bold**, `code`, and [text](url). Returns React nodes. */
-const processInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
-  const segments: React.ReactNode[] = [];
-  let keyIdx = 0;
-  const parts = text.split(/(`[^`]*`)/g);
+/** Build URL-safe id from heading text (strip markdown, lowercase, hyphenate). */
+function headingToId(raw: string): string {
+  const t = raw
+    .replace(/^#+\s*/, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/`[^`]*`/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+  return t || 'section';
+}
 
-  const processSegment = (segment: string) => {
-    // Linked image: [![alt](imgUrl)](linkUrl) — must run before plain link
+/** Extract TOC entries (H2, H3) from markdown. */
+function getTocFromMarkdown(md: string): { level: 2 | 3; text: string; id: string }[] {
+  const entries: { level: 2 | 3; text: string; id: string }[] = [];
+  const seen = new Map<string, number>();
+  for (const line of md.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('## ') && !trimmed.startsWith('### ')) {
+      const text = trimmed.replace(/^##\s+/, '').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`[^`]*`/g, '').trim();
+      let id = headingToId(trimmed);
+      const count = (seen.get(id) ?? 0) + 1;
+      seen.set(id, count);
+      if (count > 1) id = `${id}-${count}`;
+      entries.push({ level: 2, text, id });
+    } else if (trimmed.startsWith('### ')) {
+      const text = trimmed.replace(/^###\s+/, '').replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`[^`]*`/g, '').trim();
+      let id = headingToId(trimmed);
+      const count = (seen.get(id) ?? 0) + 1;
+      seen.set(id, count);
+      if (count > 1) id = `${id}-${count}`;
+      entries.push({ level: 3, text, id });
+    }
+  }
+  return entries;
+}
+
+/** Renders one segment (no **bold**): `code`, [links], images. Pushes to out and uses keyPrefix/keyIdx. */
+function processSegment(
+  segment: string,
+  keyPrefix: string,
+  keyIdxRef: { current: number },
+  out: React.ReactNode[],
+  allowBold: boolean
+) {
+  const parts = segment.split(/(`[^`]*`)/g);
+  const push = (node: React.ReactNode) => {
+    out.push(node);
+    keyIdxRef.current += 1;
+  };
+  const k = () => `${keyPrefix}-${keyIdxRef.current}`;
+
+  parts.forEach((part) => {
+    if (part.startsWith('`') && part.endsWith('`')) {
+      push(
+        <code key={k()} className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-sm sm:text-base font-mono font-bold">
+          {part.slice(1, -1)}
+        </code>
+      );
+      return;
+    }
+
     const linkedImageRegex = /\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g;
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
@@ -96,22 +151,23 @@ const processInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode
     const imageMatches: { index: number; length: number; alt: string; src: string }[] = [];
     const boldMatches: { index: number; length: number; inner: string }[] = [];
     let m;
-    while ((m = linkedImageRegex.exec(segment)) !== null) {
+    while ((m = linkedImageRegex.exec(part)) !== null) {
       linkedImgMatches.push({ index: m.index, length: m[0].length, alt: m[1], imgUrl: m[2], linkUrl: m[3] });
     }
-    while ((m = linkRegex.exec(segment)) !== null) {
-      // Skip if this span is already covered by a linked image
+    while ((m = linkRegex.exec(part)) !== null) {
       if (!linkedImgMatches.some(li => li.index <= m!.index && m!.index < li.index + li.length)) {
         linkMatches.push({ index: m.index, length: m[0].length, text: m[1], url: m[2] });
       }
     }
-    while ((m = imageRegex.exec(segment)) !== null) {
+    while ((m = imageRegex.exec(part)) !== null) {
       if (!linkedImgMatches.some(li => li.index <= m!.index && m!.index < li.index + li.length)) {
         imageMatches.push({ index: m.index, length: m[0].length, alt: m[1], src: m[2] });
       }
     }
-    while ((m = boldRegex.exec(segment)) !== null) {
-      boldMatches.push({ index: m.index, length: m[0].length, inner: m[1] });
+    if (allowBold) {
+      while ((m = boldRegex.exec(part)) !== null) {
+        boldMatches.push({ index: m.index, length: m[0].length, inner: m[1] });
+      }
     }
 
     type InlineEv =
@@ -129,63 +185,72 @@ const processInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode
     let lastEnd = 0;
     for (const ev of sorted) {
       if (ev.index < lastEnd) continue;
-      if (ev.index > lastEnd) segments.push(segment.slice(lastEnd, ev.index));
+      if (ev.index > lastEnd) out.push(part.slice(lastEnd, ev.index));
       if (ev.type === 'linkedImage') {
         const img = <img src={ev.imgUrl} alt={ev.alt} className="inline-block h-6 align-middle" />;
         if (ev.linkUrl.startsWith('http')) {
-          segments.push(
-            <a key={`${keyPrefix}-${keyIdx++}`} href={ev.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex align-middle mr-2">
+          push(
+            <a key={k()} href={ev.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex align-middle mr-2">
               {img}
             </a>
           );
         } else {
-          segments.push(
-            <Link key={`${keyPrefix}-${keyIdx++}`} to={ev.linkUrl} className="inline-flex align-middle mr-2">
+          push(
+            <Link key={k()} to={ev.linkUrl} className="inline-flex align-middle mr-2">
               {img}
             </Link>
           );
         }
       } else if (ev.type === 'link') {
         if (ev.url.startsWith('http')) {
-          segments.push(
-            <a key={`${keyPrefix}-${keyIdx++}`} href={ev.url} target="_blank" rel="noopener noreferrer" className="text-primary font-bold underline hover:no-underline">
+          push(
+            <a key={k()} href={ev.url} target="_blank" rel="noopener noreferrer" className="text-primary font-bold underline hover:no-underline">
               {ev.text}
             </a>
           );
         } else {
-          segments.push(
-            <Link key={`${keyPrefix}-${keyIdx++}`} to={ev.url} className="text-primary font-bold underline hover:no-underline">
+          push(
+            <Link key={k()} to={ev.url} className="text-primary font-bold underline hover:no-underline">
               {ev.text}
             </Link>
           );
         }
       } else if (ev.type === 'image') {
-        segments.push(
-          <img key={`${keyPrefix}-${keyIdx++}`} src={ev.src} alt={ev.alt} className="inline-block h-6 align-middle" />
+        push(
+          <img key={k()} src={ev.src} alt={ev.alt} className="inline-block h-6 align-middle" />
         );
       } else {
-        segments.push(
-          <strong key={`${keyPrefix}-${keyIdx++}`} className="font-bold text-slate-900 dark:text-white">
+        push(
+          <strong key={k()} className="font-bold text-slate-900 dark:text-white">
             {ev.inner}
           </strong>
         );
       }
       lastEnd = ev.index + ev.length;
     }
-    if (lastEnd < segment.length) segments.push(segment.slice(lastEnd));
-  };
+    if (lastEnd < part.length) out.push(part.slice(lastEnd));
+  });
+}
 
-  parts.forEach((part) => {
-    if (part.startsWith('`') && part.endsWith('`')) {
+/** Parses inline markdown: **bold**, `code`, and [text](url). Bold is processed first so **`code`** and **text** both render as bold. */
+const processInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
+  const segments: React.ReactNode[] = [];
+  const keyIdxRef = { current: 0 };
+
+  const boldParts = text.split(/\*\*/);
+  for (let i = 0; i < boldParts.length; i++) {
+    if (i % 2 === 1) {
+      const inner: React.ReactNode[] = [];
+      processSegment(boldParts[i], keyPrefix, keyIdxRef, inner, false);
       segments.push(
-        <code key={`${keyPrefix}-${keyIdx++}`} className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-sm sm:text-base font-mono font-bold">
-          {part.slice(1, -1)}
-        </code>
+        <strong key={`${keyPrefix}-${keyIdxRef.current++}`} className="font-bold text-slate-900 dark:text-white">
+          {inner}
+        </strong>
       );
     } else {
-      processSegment(part);
+      processSegment(boldParts[i], keyPrefix, keyIdxRef, segments, true);
     }
-  });
+  }
   return segments;
 };
 
@@ -194,9 +259,13 @@ const DocPage: React.FC = () => {
   const [content, setContent] = useState<string>('');
 
   const allPages = SIDEBAR_NAV.flatMap(section => section.items);
+  const currentPage = slug ? allPages.find(p => p.path === slug) : null;
+  const pageTitle = currentPage?.title ?? (slug ?? '').replace(/-/g, ' ');
   const currentIndex = allPages.findIndex(page => page.path === slug);
   const prevPage = currentIndex > 0 ? allPages[currentIndex - 1] : null;
   const nextPage = currentIndex < allPages.length - 1 ? allPages[currentIndex + 1] : null;
+
+  const tocEntries = useMemo(() => getTocFromMarkdown(content), [content]);
 
   useEffect(() => {
     if (slug && DOCS_CONTENT[slug]) {
@@ -211,6 +280,7 @@ const DocPage: React.FC = () => {
     const blocks: React.ReactNode[] = [];
     const lines = md.split('\n');
     let i = 0;
+    let tocIndex = 0;
 
     while (i < lines.length) {
       const line = lines[i];
@@ -232,9 +302,24 @@ const DocPage: React.FC = () => {
       if (line.startsWith('# ')) {
         blocks.push(<h1 key={i} className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white mt-12 mb-10 tracking-tighter leading-tight">{processInlineMarkdown(line.replace('# ', ''), `h1-${i}`)}</h1>);
       } else if (line.startsWith('## ')) {
-        blocks.push(<h2 key={i} className="text-3xl font-black text-slate-900 dark:text-white mt-20 mb-8 tracking-tight flex items-center gap-4"><span className="h-10 w-2 rounded-full bg-primary shadow-sm shadow-primary/40"></span>{processInlineMarkdown(line.replace('## ', ''), `h2-${i}`)}</h2>);
+        const entry = tocEntries[tocIndex++];
+        const id = entry?.id ?? headingToId(line);
+        blocks.push(
+          <h2 key={i} id={id} className="text-3xl font-black text-slate-900 dark:text-white mt-20 mb-8 tracking-tight flex items-center gap-4 scroll-mt-24">
+            <span className="h-10 w-2 rounded-full bg-primary shadow-sm shadow-primary/40 shrink-0" aria-hidden />
+            <span className="min-w-0">{processInlineMarkdown(line.replace('## ', ''), `h2-${i}`)}</span>
+            <a href={`#${id}`} className="heading-anchor shrink-0" aria-label={`Link to section: ${entry?.text ?? id}`}>#</a>
+          </h2>
+        );
       } else if (line.startsWith('### ')) {
-        blocks.push(<h3 key={i} className="text-2xl font-bold text-slate-900 dark:text-white mt-14 mb-6">{processInlineMarkdown(line.replace('### ', ''), `h3-${i}`)}</h3>);
+        const entry = tocEntries[tocIndex++];
+        const id = entry?.id ?? headingToId(line);
+        blocks.push(
+          <h3 key={i} id={id} className="text-2xl font-bold text-slate-900 dark:text-white mt-14 mb-6 flex items-center gap-3 scroll-mt-24">
+            <span className="min-w-0">{processInlineMarkdown(line.replace('### ', ''), `h3-${i}`)}</span>
+            <a href={`#${id}`} className="heading-anchor shrink-0" aria-label={`Link to section: ${entry?.text ?? id}`}>#</a>
+          </h3>
+        );
       }
       else if (line.startsWith('|')) {
         if (!lines[i-1]?.startsWith('|')) {
@@ -291,40 +376,68 @@ const DocPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-6 py-20 sm:px-12 lg:px-20 animate-in fade-in slide-in-from-bottom-6 duration-700">
-      <div className="mb-12 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-        <Link to="/" className="hover:text-primary transition-colors">Docs</Link>
-        <span className="material-symbols-outlined text-[16px] text-slate-300">chevron_right</span>
-        <span className="text-slate-900 dark:text-white">{slug?.replace('-', ' ')}</span>
+    <div className="w-full max-w-[var(--docs-content-max,80rem)] mx-auto px-6 py-16 sm:px-10 lg:px-16 animate-in fade-in slide-in-from-bottom-6 duration-700 flex flex-col lg:flex-row gap-12 lg:gap-16">
+      {/* Main column: breadcrumb + prose */}
+      <div className="min-w-0 flex-1">
+        <nav aria-label="Breadcrumb" className="mb-10 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+          <span className="material-symbols-outlined text-[16px] text-slate-300" aria-hidden>chevron_right</span>
+          <Link to="/docs/introduction" className="hover:text-primary transition-colors">Docs</Link>
+          <span className="material-symbols-outlined text-[16px] text-slate-300" aria-hidden>chevron_right</span>
+          <span className="text-slate-900 dark:text-white truncate" aria-current="page">{pageTitle}</span>
+        </nav>
+
+        <article className="prose-doc prose dark:prose-invert max-w-none">
+          {renderContent(content)}
+        </article>
+
+        <footer className="mt-24 pt-12 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between gap-10">
+          {prevPage ? (
+            <Link to={`/docs/${prevPage.path}`} className="group flex flex-col gap-3 text-left flex-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 group-hover:text-primary transition-colors">
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span> Previous
+              </span>
+              <span className="text-xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">{prevPage.title}</span>
+            </Link>
+          ) : (
+            <div className="flex-1 hidden sm:block" />
+          )}
+          {nextPage ? (
+            <Link to={`/docs/${nextPage.path}`} className="group flex flex-col gap-3 items-end text-right flex-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 group-hover:text-primary transition-colors">
+                Next <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </span>
+              <span className="text-xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">{nextPage.title}</span>
+            </Link>
+          ) : (
+            <div className="flex-1 hidden sm:block" />
+          )}
+        </footer>
       </div>
 
-      <div className="prose dark:prose-invert max-w-none">
-        {renderContent(content)}
-      </div>
-
-      <div className="mt-32 pt-16 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between gap-10">
-        {prevPage ? (
-          <Link to={`/docs/${prevPage.path}`} className="group flex flex-col gap-3 text-left flex-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 group-hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span> Previous
-            </span>
-            <span className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">{prevPage.title}</span>
-          </Link>
-        ) : (
-          <div className="flex-1 hidden sm:block"></div>
-        )}
-        
-        {nextPage ? (
-          <Link to={`/docs/${nextPage.path}`} className="group flex flex-col gap-3 items-end text-right flex-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 group-hover:text-primary transition-colors">
-              Next <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </span>
-            <span className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">{nextPage.title}</span>
-          </Link>
-        ) : (
-          <div className="flex-1 hidden sm:block"></div>
-        )}
-      </div>
+      {/* On this page — sticky TOC */}
+      {tocEntries.length > 0 && (
+        <aside
+          className="hidden xl:block w-56 shrink-0"
+          aria-label="On this page"
+        >
+          <div className="sticky top-24">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">On this page</p>
+            <nav className="flex flex-col gap-1.5 custom-scrollbar max-h-[calc(100vh-10rem)] overflow-y-auto">
+              {tocEntries.map((entry) => (
+                <a
+                  key={entry.id}
+                  href={`#${entry.id}`}
+                  className={`text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light transition-colors py-1 border-l-2 border-transparent hover:border-primary pl-3 -ml-px`}
+                  style={entry.level === 3 ? { paddingLeft: '1.25rem' } : undefined}
+                >
+                  {entry.text}
+                </a>
+              ))}
+            </nav>
+          </div>
+        </aside>
+      )}
     </div>
   );
 };

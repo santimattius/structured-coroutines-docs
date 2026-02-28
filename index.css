@@ -1,0 +1,106 @@
+/* ============================================
+   Structured Coroutines Docs — Base & Doc UX
+   ============================================ */
+
+:root {
+  /* Readability: optimal line length for documentation (≈ 65–70 characters) */
+  --docs-prose-width: 65ch;
+  --docs-content-max: 80rem;
+  /* Anchor offset so fixed header doesn’t cover headings */
+  --scroll-margin-top: 6rem;
+  /* Section spacing for visual rhythm */
+  --section-gap: 2.5rem;
+  --block-gap: 1.5rem;
+}
+
+/* Skip to main content — accessibility */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--tw-color-primary, #8052ff);
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
+  transition: top 0.2s ease;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 1rem;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* Heading anchors: scroll margin so fixed header doesn’t hide content */
+.prose-doc h1[id],
+.prose-doc h2[id],
+.prose-doc h3[id] {
+  scroll-margin-top: var(--scroll-margin-top);
+}
+
+/* Subtle anchor link on hover for “copy link” UX */
+.prose-doc .heading-anchor {
+  margin-left: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  color: var(--tw-color-primary, #8052ff);
+  text-decoration: none;
+  font-weight: 400;
+}
+.prose-doc h2:hover .heading-anchor,
+.prose-doc h3:hover .heading-anchor {
+  opacity: 0.7;
+}
+.prose-doc .heading-anchor:hover {
+  opacity: 1;
+}
+.dark .prose-doc .heading-anchor {
+  color: #a78bfa;
+}
+
+/* Focus visible for keyboard users (no focus ring on mouse click) */
+*:focus {
+  outline: none;
+}
+*:focus-visible {
+  outline: 2px solid var(--tw-color-primary, #8052ff);
+  outline-offset: 2px;
+}
+.dark *:focus-visible {
+  outline-color: #a78bfa;
+}
+
+/* Custom scrollbar (already in index.html; ensure consistency) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* Prose: constrain line length for readability */
+.prose-doc {
+  max-width: var(--docs-prose-width);
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .skip-link,
+  .prose-doc .heading-anchor,
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

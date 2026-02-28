@@ -27,12 +27,12 @@ export const SIDEBAR_NAV: NavSection[] = [
       { title: "Gradle Plugin", path: "gradle-plugin", icon: "build_circle" },
       { title: "Lint Rules", path: "lint-rules", icon: "visibility" },
       { title: "Compiler Plugin", path: "compiler", icon: "memory" },
+      { title: "Kotlin Coroutines Skill", path: "kotlin-coroutines-skill", icon: "smart_toy" },
     ]
   },
   {
     section: "REFERENCE",
     items: [
-      { title: "Kotlin Coroutines Skill", path: "kotlin-coroutines-skill", icon: "smart_toy" },
       { title: "API Reference", path: "api", icon: "code" },
       { title: "Changelog", path: "changelog", icon: "change_history" },
     ]
@@ -75,6 +75,12 @@ export const MODULES: ModuleCard[] = [
     description: "K2/FIR Compiler Plugin with 12 rules. Enforces structured concurrency at compile time (7 errors, 5 warnings).",
     icon: "memory",
     path: "/docs/compiler"
+  },
+  {
+    title: "Kotlin Coroutines Skill",
+    description: "Agent Skill for AI coding tools. Consistent, rule-based guidance for Claude, ChatGPT, Cursor — scopes, dispatchers, cancellation, testing.",
+    icon: "smart_toy",
+    path: "/docs/kotlin-coroutines-skill"
   }
 ];
 
@@ -122,6 +128,7 @@ This toolkit enforces structured concurrency best practices through:
 2. **Detekt Rules** — Static analysis warnings
 3. **Android Lint Rules** — Android-specific static analysis with quick fixes
 4. **IntelliJ/Android Studio Plugin** — Real-time IDE analysis, quick fixes, and tool window
+5. **Kotlin Coroutines Skill** — Agent Skill for AI tools (Claude, ChatGPT, Cursor) for consistent code review and refactoring advice
 
 ## Toolkit Components
 
@@ -133,13 +140,14 @@ This toolkit enforces structured concurrency best practices through:
 | \`intellij-plugin\` | IntelliJ/Android Studio Plugin | Real-time IDE analysis |
 | \`annotations\` | \`@StructuredScope\` annotation | Runtime/Compile |
 | \`gradle-plugin\` | Gradle integration | Build configuration |
+| \`kotlin-coroutines-skill\` | Agent Skill for AI coding tools | Code review, refactoring, migrations |
 
 ## Getting Started
 
 1. Read [Core Concepts](/docs/core-concepts) for structured concurrency best practices.
 2. Follow [Gradle Plugin](/docs/gradle-plugin) for installation (Compiler Plugin + annotations).
 3. Use [Annotations](/docs/annotations) to mark scopes with \`@StructuredScope\` where needed.
-4. Optionally add [Detekt Rules](/docs/detekt-rules), [Lint Rules](/docs/lint-rules) (Android), and the [IntelliJ Plugin](/docs/intellij-plugin) for full coverage.
+4. Optionally add [Detekt Rules](/docs/detekt-rules), [Lint Rules](/docs/lint-rules) (Android), the [IntelliJ Plugin](/docs/intellij-plugin), and the [Kotlin Coroutines Skill](/docs/kotlin-coroutines-skill) (for AI-assisted review) for full coverage.
 
 For a high-level view of all rules, see [Rules Overview](/docs/rules-overview). For adoption in existing projects, see [Gradual Adoption](/docs/gradual-adoption). For the full checklist and rule codes, see [Best Practices](/docs/best-practices).
 `,
@@ -702,34 +710,127 @@ The plugin uses the K2/FIR API to detect:
 The **sample** project includes a \`compilation\` package with one example per compiler rule (7 errors, 4 warnings) for testing. See [compiler/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/compiler/README.md).
 `,
   "kotlin-coroutines-skill": `
-# Kotlin Coroutines Agent Skill
+# Kotlin Coroutines Skill
 
-Expert guidance for **AI coding tools** (ChatGPT, Claude, Cursor, etc.) — safe structured concurrency, performance, and Kotlin/Coroutines best practices. This package is part of the [Structured Coroutines](https://github.com/santimattius/structured-coroutines) project and provides **consistent, rule-based AI/agent-driven guidance** for reviewing or refactoring Kotlin/Android coroutine code.
+Expert guidance for **any AI coding tool** that supports Agent Skills or custom instructions — **safe structured concurrency**, performance, and Kotlin 1.9/2.0+ best practices for Coroutines.
+
+This skill is part of the [Structured Coroutines](https://github.com/santimattius/structured-coroutines) project. It encodes a single set of rules (scopes, dispatchers, exceptions, cancellation, testing, channels) so that **Claude, ChatGPT, Cursor, or other agents** give **consistent, correct** advice on Kotlin Coroutines. Inspired by the [Swift Concurrency Agent Skill](https://github.com/AvdLee/Swift-Concurrency-Agent-Skill) model.
 
 ## Why This Skill Exists
 
-- **Structured concurrency is easy to get wrong:** \`GlobalScope\`, wrong Dispatchers, swallowed \`CancellationException\`, and misuse of \`SupervisorJob\` lead to leaks, ANRs, and flaky behavior. This skill encodes a single set of rules so agents give **aligned** recommendations.
-- **Faster reviews and migrations:** Teams can point their AI at this skill and get code that follows the same checklist (no GlobalScope, proper scopes, \`withContext(IO)\`, virtual-time tests, etc.).
+- **Structured concurrency is easy to get wrong:** \`GlobalScope\`, wrong Dispatchers, swallowed \`CancellationException\`, and misuse of \`SupervisorJob\` lead to leaks, ANRs, and flaky behavior. Many AI answers repeat these mistakes.
+- **One source of truth:** This skill encodes a consistent checklist so every AI tool gives the same aligned recommendations.
+- **Faster reviews and migrations:** Teams can point their AI at this skill and get code that follows the same rules — no GlobalScope, proper scopes, \`withContext(IO)\`, virtual-time tests, etc.
 
 ## What's Included
 
 | Asset | Description |
 |-------|-------------|
-| **SYSTEM_PROMPT.md** | Full system prompt: identity, strict rules, tone, output format (analysis → erroneous → optimized → explanation). |
-| **SKILL.md** | Playbook: maps topic/error to the right reference file. |
-| **references/** | One markdown file per best practice (Bad / Recommended / Why / Quick fix). |
-| **CONFIG.json** | Metadata: name, description, version, triggers, reference index. |
+| **SYSTEM_PROMPT.md** | Full system prompt: identity, strict rules, tone, and required output format (analysis → erroneous code → optimized code → explanation). |
+| **SKILL.md** | Playbook (triage): maps topic/error to the right reference file so the agent jumps to the relevant practice. |
+| **references/** | One markdown file per best practice (19 files). Each has Bad / Recommended / Why / Quick fix. |
+| **CONFIG.json** | Metadata: name, description, version, triggers, and reference index. |
+| **EXAMPLES_SUITE.kt** | Kotlin examples with intentional anti-patterns (scope leaks, exception handling, Dispatchers) for testing the agent. |
 
-References cover: GlobalScope, async without await, breaking structured concurrency, runBlocking in suspend, blocking/wrong Dispatchers, Dispatchers.Unconfined, Job/SupervisorJob in builders, cancellation in loops, swallowing CancellationException, suspend cleanup with NonCancellable, reusing cancelled scope, slow tests, channels, and architecture patterns.
+**References by section:**
 
-## Installation
+| § | Topic |
+|---|-------|
+| 1.1 | GlobalScope in production |
+| 1.2 | async without await |
+| 1.3 | Breaking structured concurrency |
+| 2.1 | launch on last line of coroutineScope |
+| 2.2 | runBlocking in suspend |
+| 3.1 | Blocking code with wrong Dispatchers |
+| 3.2 | Dispatchers.Unconfined |
+| 3.3 | Job()/SupervisorJob() in builders |
+| 4.1 | Cancellation in intensive loops |
+| 4.2 | Swallowing CancellationException |
+| 4.3 | Suspend cleanup without NonCancellable |
+| 4.4 | Reusing cancelled scope |
+| 5.1 | SupervisorJob in single builder |
+| 5.2 | CancellationException for domain errors |
+| 6.1 | Slow tests with real delays |
+| 6.2 | Uncontrolled fire-and-forget in tests |
+| 7.1 | Channel not closed |
+| 7.2 | consumeEach with multiple consumers |
+| 8 | Architecture patterns |
 
-- **ChatGPT (Custom GPTs):** Paste \`SYSTEM_PROMPT.md\` into Configure → Instructions.
-- **Claude (Projects):** Paste \`SYSTEM_PROMPT.md\` into Project settings → Custom instructions.
-- **Cursor:** Create a rule in \`.cursor/rules/\` (e.g. \`kotlin-coroutines-skill.md\`) with the content of \`SYSTEM_PROMPT.md\`; use globs \`**/*.kt\` if supported.
-- **Claude Code (Plugin):** \`claude --plugin-dir /path/to/structured-coroutines/kotlin-coroutines-skill\`.
+## Setup
 
-Full instructions: [kotlin-coroutines-skill/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/kotlin-coroutines-skill/README.md).
+### Option A: Claude Code (Plugin — Recommended)
+
+Claude Code supports this skill as a plugin via the marketplace.
+
+**Install from the marketplace:**
+
+\`\`\`bash
+/plugin marketplace add santimattius/structured-coroutines
+/plugin install kotlin-coroutines-skill
+\`\`\`
+
+**Install from a local directory:**
+
+\`\`\`bash
+claude --plugin-dir /path/to/structured-coroutines/kotlin-coroutines-skill
+\`\`\`
+
+Once installed, the skill is available when you work on Kotlin/Android code. Claude Code reads **SKILL.md** (triage), **SYSTEM_PROMPT.md** (rules and output format), and **references/ref-*.md** on demand.
+
+### Option B: Claude (Projects — Custom Instructions)
+
+1. In Claude, open **Projects** and create or select a project.
+2. Go to **Project settings → Custom instructions**.
+3. Paste the full content of **SYSTEM_PROMPT.md**.
+4. Optionally add: *"For Kotlin Coroutines questions, always use the structured output format: 1) Analysis, 2) Erroneous code, 3) Optimized code, 4) Technical explanation."*
+5. Save.
+
+### Option C: ChatGPT (Custom GPTs)
+
+1. Create a new **Custom GPT** (ChatGPT Plus or Team).
+2. In **Configure → Instructions**, paste the full content of **SYSTEM_PROMPT.md**.
+3. Optionally upload the \`references/\` files to **Knowledge** so the GPT can reference them.
+4. Save and name the GPT (e.g. "Kotlin Coroutines Expert").
+
+### Option D: Cursor (Rules for AI)
+
+1. In your repo, open or create \`.cursor/rules/\`.
+2. Create a file \`kotlin-coroutines.mdc\` (or \`.md\`).
+3. Paste the full content of **SYSTEM_PROMPT.md**.
+4. Add a \`globs\` condition so the rule applies to Kotlin files: \`**/*.kt\`.
+5. Reload Cursor rules.
+
+## Example Prompts
+
+Use these to validate that the agent is following the skill:
+
+| Prompt | What it tests |
+|--------|----------------|
+| *"Refactor this code to avoid GlobalScope and follow structured concurrency."* | Scopes and leaks |
+| *"I'm reading a file with \`Dispatchers.Default\`. Is that correct?"* | Dispatchers |
+| *"This catch block catches \`Exception\` and logs it. How should I handle CancellationException?"* | Exception handling |
+| *"Replace runBlocking and real delay() in this test with kotlinx-coroutines-test and virtual time."* | Testing |
+| *"Review this coroutine code: 1) Analysis, 2) Erroneous snippet, 3) Optimized snippet, 4) Explanation."* | Output format |
+
+**Verify installation:** Open a \`.kt\` file with \`GlobalScope.launch { }\` and ask the agent to review it. The response should follow: **Analysis → Erroneous Code → Optimized Code → Technical Explanation**.
+
+## Quick Checklist
+
+The skill enforces these rules in every response:
+
+- No \`GlobalScope\`; use framework (\`viewModelScope\`, \`lifecycleScope\`) or injected/local scopes.
+- \`async\` only when you need a return value; otherwise \`launch\`.
+- No \`runBlocking\` inside suspend functions — use \`withContext\` or \`coroutineScope\`.
+- Blocking I/O always on \`withContext(Dispatchers.IO)\`. Never on \`Default\` or \`Main\`.
+- No \`Dispatchers.Unconfined\` in production.
+- No \`Job()\` / \`SupervisorJob()\` passed directly to builders; use \`supervisorScope { }\` or a scope-level \`SupervisorJob\`.
+- Never swallow \`CancellationException\`; rethrow it in catch.
+- Suspend cleanup in \`finally\` → \`withContext(NonCancellable) { }\`.
+- Do not reuse a scope after \`scope.cancel()\`; use \`cancelChildren()\` to stop only children.
+- Tests use \`runTest\` with virtual time (\`advanceTimeBy\`, \`advanceUntilIdle\`). No real \`delay()\`.
+- Channels: prefer \`produce { }\`. Use \`for (x in channel)\` per consumer, not \`consumeEach\` for fan-out.
+
+Full rules are in **SYSTEM_PROMPT.md**, the triage table is in **SKILL.md**, and per-practice detail is in \`references/\`. Repository: [kotlin-coroutines-skill](https://github.com/santimattius/structured-coroutines/tree/features/0.3.0/kotlin-coroutines-skill).
 `,
   "api": `
 # API Reference

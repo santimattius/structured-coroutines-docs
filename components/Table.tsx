@@ -9,9 +9,12 @@ const StatusIcon = ({ status }: { status: 'check' | 'warning' | 'none' }) => {
 
 const Table: React.FC = () => {
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark shadow-sm mt-8">
-      <div className="overflow-x-auto">
+    <div className="w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark shadow-sm mt-8" role="region" aria-labelledby="comparison-table-caption">
+      <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left border-collapse">
+          <caption id="comparison-table-caption" className="sr-only">
+            Feature comparison: Compiler Plugin, Detekt, Lint Rules, and IDE Plugin support per rule.
+          </caption>
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
               <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white min-w-[200px]">Feature</th>

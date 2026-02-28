@@ -144,6 +144,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       {/* Top Nav */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 h-16">
         <div className="max-w-[1440px] mx-auto h-full flex items-center justify-between px-6 sm:px-10">
@@ -251,7 +254,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         )}
 
         {/* Main Content - Center on Home, Shift on Docs */}
-        <main className={`flex-1 ${isHome ? 'lg:ml-0' : 'lg:ml-72'} min-h-[calc(100vh-64px)] overflow-x-hidden transition-[margin] duration-300`}>
+        <main id="main-content" tabIndex={-1} className={`flex-1 ${isHome ? 'lg:ml-0' : 'lg:ml-72'} min-h-[calc(100vh-64px)] overflow-x-hidden transition-[margin] duration-300`}>
           <div className="w-full h-full">
             {children}
           </div>
