@@ -78,7 +78,7 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "Kotlin Coroutines Skill",
-    description: "Agent Skill for AI coding tools. Consistent, rule-based guidance for Claude, ChatGPT, Cursor — scopes, dispatchers, cancellation, testing.",
+    description: "Agent Skill v2.0.0 for AI coding tools. 32 practices, strict rules, triage playbook — scopes, dispatchers, cancellation, testing, Flow, Android lifecycle.",
     icon: "smart_toy",
     path: "/docs/kotlin-coroutines-skill"
   }
@@ -100,6 +100,7 @@ export const COMPARISON_DATA: ComparisonRow[] = [
   { feature: "Flow Blocking Call (FLOW_001)", compiler: "none", detekt: "check", lint: "check", ide: "none" },
   { feature: "Lifecycle-Aware Flow Collection (Android)", compiler: "none", detekt: "none", lint: "check", ide: "check" },
   { feature: "MainDispatcherMisuse (Android)", compiler: "none", detekt: "none", lint: "check", ide: "check" },
+  { feature: "WithTimeout Scope Cancellation (CANCEL_006)", compiler: "none", detekt: "check", lint: "none", ide: "check" },
   { feature: "Quick Fixes / Auto-Correction", compiler: "none", detekt: "none", lint: "check", ide: "check" },
 ];
 
@@ -149,7 +150,7 @@ This toolkit enforces structured concurrency best practices through:
 3. Use [Annotations](/docs/annotations) to mark scopes with \`@StructuredScope\` where needed.
 4. Optionally add [Detekt Rules](/docs/detekt-rules), [Lint Rules](/docs/lint-rules) (Android), the [IntelliJ Plugin](/docs/intellij-plugin), and the [Kotlin Coroutines Skill](/docs/kotlin-coroutines-skill) (for AI-assisted review) for full coverage.
 
-For a high-level view of all rules, see [Rules Overview](/docs/rules-overview). For adoption in existing projects, see [Gradual Adoption](/docs/gradual-adoption). For the full checklist and rule codes, see [Best Practices](/docs/best-practices).
+For a high-level view of all rules, see [Rules Overview](/docs/rules-overview). For adoption in existing projects, see [Gradual Adoption](/docs/gradual-adoption). For the full checklist and rule codes, see [Best Practices](/docs/best-practices). A **Decision Guide** (decision tables and trees for launch vs async, which scope, withTimeout, Flow, etc.) is available in the repository (\`DECISION_GUIDE.md\`).
 `,
   "core-concepts": `
 # Core Concepts
@@ -336,9 +337,9 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 
 **Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only (8):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001).
+**Detekt-only (9):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001), **WithTimeoutScopeCancellation** (CANCEL_006).
 
-**Total: 18 rules.** See [Detekt Rules](/docs/detekt-rules).
+**Total: 19 rules.** See [Detekt Rules](/docs/detekt-rules).
 
 ## Android Lint Rules (Static Analysis)
 
@@ -359,7 +360,7 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 | Approach | When | Errors | Warnings | CI | Real-time |
 |----------|------|--------|----------|-----|-----------|
 | Compiler Plugin | Compile | ✅ 7 | ✅ 5 | ✅ | ❌ |
-| Detekt Rules | Analysis | — | ✅ 18 | ✅ | ❌ |
+| Detekt Rules | Analysis | — | ✅ 19 | ✅ | ❌ |
 | Android Lint | Analysis | — | ✅ 21 | ✅ | ❌ |
 | IDE Plugin | Editing | — | ✅ 14 | ❌ | ✅ |
 
@@ -438,7 +439,7 @@ JVM, JS, iOS, macOS, watchOS, tvOS, Linux, Windows, WASM. Use the \`annotations\
   "detekt-rules": `
 # Detekt Rules
 
-Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 18 rules** (10 compiler-plugin parity + 8 Detekt-only). Use for multiplatform projects and CI/CD.
+Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 19 rules** (10 compiler-plugin parity + 9 Detekt-only). Use for multiplatform projects and CI/CD.
 
 ## Installation
 
@@ -447,7 +448,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 }
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.4.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.5.0")
 }
 \`\`\`
 
@@ -455,7 +456,7 @@ dependencies {
 
 **Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only (8):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001).
+**Detekt-only (9):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001), **WithTimeoutScopeCancellation** (CANCEL_006).
 
 | Rule | Category | Description |
 |------|----------|-------------|
@@ -477,6 +478,7 @@ dependencies {
 | ChannelNotClosed | Detekt-Only | Manual \`Channel()\` without \`close()\` (CHANNEL_001) |
 | ConsumeEachMultipleConsumers | Detekt-Only | Same Channel with \`consumeEach\` from multiple coroutines (CHANNEL_002) |
 | FlowBlockingCall | Detekt-Only | Blocking calls inside \`flow { }\` (FLOW_001) |
+| WithTimeoutScopeCancellation | Detekt-Only | \`withTimeout\` without try/catch for \`TimeoutCancellationException\` (CANCEL_006); heuristic; suppress when intentional |
 
 Run: \`./gradlew detekt\`. Full config and per-rule details: [Detekt Rules](/docs/detekt-rules) and repository [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md).
 `,
@@ -491,7 +493,7 @@ Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured
 - **From disk:** Download ZIP from [Releases](https://github.com/santimattius/structured-coroutines/releases) → Plugins → Install Plugin from Disk.
 - **Build locally:** \`./gradlew :intellij-plugin:buildPlugin\` then install the ZIP from \`intellij-plugin/build/distributions/\`. Run sandbox: \`./gradlew :intellij-plugin:runIde\`.
 
-## Inspections (14)
+## Inspections (15)
 
 | Inspection | Severity | Description |
 |------------|----------|-------------|
@@ -509,14 +511,15 @@ Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured
 | DispatchersUnconfined | WARNING | \`Dispatchers.Unconfined\` |
 | **LoopWithoutYield** | WARNING | Loops in suspend without cooperation points (CANCEL_001); quick fixes: ensureActive, yield, delay(0) |
 | **LifecycleAwareFlowCollection** | WARNING | Flow collection in \`lifecycleScope.launch\` without \`repeatOnLifecycle\`/\`flowWithLifecycle\` (ARCH_002) |
+| **WithTimeoutScopeCancellation** | WARNING | \`withTimeout\` without try/catch for timeout/cancellation (CANCEL_006); quick fix: replace with \`withTimeoutOrNull\` |
 
 ## Structured Coroutines Tool Window
 
-**View → Tool Windows → Structured Coroutines.** Lists all findings for the **current file**. Use **Refresh** to run inspections; **double-click** a row to jump to the issue. Correctly recognizes \`@StructuredScope\` on parameters and properties.
+**View → Tool Windows → Structured Coroutines.** Lists all findings for the **current file**. Columns: Severity | Location | Inspection | **What to do** (action summary per finding). Detail bar shows full "What to do" text and **"See guide →"** link to the best-practices guide. Use **Refresh** to run inspections; **double-click** a row to jump to the issue. Correctly recognizes \`@StructuredScope\` on parameters and properties.
 
 ## Quick Fixes
 
-Replace with viewModelScope/lifecycleScope/coroutineScope; wrap with Dispatchers.IO; **replace cancel with cancelChildren** (ScopeReuseAfterCancel); remove runBlocking; add await / convert to launch; wrap with NonCancellable; add CancellationException handling; supervisorScope for Job in builder; **add cooperation point in loop** (ensureActive, yield, delay(0)); **change superclass to Exception** (CancellationException subclass).
+Replace with viewModelScope/lifecycleScope/coroutineScope; wrap with Dispatchers.IO; **replace cancel with cancelChildren** (ScopeReuseAfterCancel); remove runBlocking; add await / convert to launch; wrap with NonCancellable; add CancellationException handling; supervisorScope for Job in builder; **add cooperation point in loop** (ensureActive, yield, delay(0)); **change superclass to Exception** (CancellationException subclass); **replace with withTimeoutOrNull** (WithTimeoutScopeCancellation, CANCEL_006).
 
 ## Intentions (6)
 
@@ -712,9 +715,9 @@ The **sample** project includes a \`compilation\` package with one example per c
   "kotlin-coroutines-skill": `
 # Kotlin Coroutines Skill
 
-Expert guidance for **any AI coding tool** that supports Agent Skills or custom instructions — **safe structured concurrency**, performance, and Kotlin 1.9/2.0+ best practices for Coroutines.
+Expert guidance for **any AI coding tool** that supports Agent Skills or custom instructions — **safe structured concurrency**, performance, and Kotlin 1.9/2.0+ best practices for Coroutines. **v2.0.0** includes **32 practices**, **34 triage entries**, and **32 reference files** (including §1.4 awaitAll, §3.2 main-safe suspend, §4.6–4.7 withTimeout, §5.3 exception handler vs async, §6.3 setMain/resetMain, §8.2 lifecycle Flow, §9.1–9.4 Flow).
 
-This skill is part of the [Structured Coroutines](https://github.com/santimattius/structured-coroutines) project. It encodes a single set of rules (scopes, dispatchers, exceptions, cancellation, testing, channels) so that **Claude, ChatGPT, Cursor, or other agents** give **consistent, correct** advice on Kotlin Coroutines. Inspired by the [Swift Concurrency Agent Skill](https://github.com/AvdLee/Swift-Concurrency-Agent-Skill) model.
+This skill is part of the [Structured Coroutines](https://github.com/santimattius/structured-coroutines) project. It encodes a single set of rules (scopes, dispatchers, exceptions, cancellation, testing, channels, Flow, Android lifecycle) so that **Claude, ChatGPT, Cursor, or other agents** give **consistent, correct** advice on Kotlin Coroutines. Inspired by the [Swift Concurrency Agent Skill](https://github.com/AvdLee/Swift-Concurrency-Agent-Skill) model.
 
 ## Why This Skill Exists
 
@@ -728,7 +731,7 @@ This skill is part of the [Structured Coroutines](https://github.com/santimattiu
 |-------|-------------|
 | **SYSTEM_PROMPT.md** | Full system prompt: identity, strict rules, tone, and required output format (analysis → erroneous code → optimized code → explanation). |
 | **SKILL.md** | Playbook (triage): maps topic/error to the right reference file so the agent jumps to the relevant practice. |
-| **references/** | One markdown file per best practice (19 files). Each has Bad / Recommended / Why / Quick fix. |
+| **references/** | One markdown file per best practice (32 files in v2.0.0). Each has Bad / Recommended / Why / Quick fix. |
 | **CONFIG.json** | Metadata: name, description, version, triggers, and reference index. |
 | **EXAMPLES_SUITE.kt** | Kotlin examples with intentional anti-patterns (scope leaks, exception handling, Dispatchers) for testing the agent. |
 
@@ -842,7 +845,7 @@ Key artifacts and documentation are maintained in the repository:
 | \`io.github.santimattius:structured-coroutines-annotations\` | \`@StructuredScope\`, multiplatform |
 | \`io.github.santimattius:structured-coroutines-compiler\` | K2/FIR compiler plugin |
 | \`io.github.santimattius.structured-coroutines\` (Gradle) | Gradle plugin |
-| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (18) |
+| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (19) |
 | \`io.github.santimattius:structured-coroutines-lint-rules\` | Android Lint rules (21) |
 
 **Module docs** (repository [features/0.3.0](https://github.com/santimattius/structured-coroutines/tree/features/0.3.0)): [Gradle Plugin](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/gradle-plugin/README.md), [Detekt](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md), [Lint](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/lint-rules/README.md), [IntelliJ](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/intellij-plugin/README.md), [Annotations](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/annotations/README.md), [Compiler](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/compiler/README.md), [Kotlin Coroutines Skill](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/kotlin-coroutines-skill/README.md).
@@ -862,6 +865,14 @@ Key artifacts and documentation are maintained in the repository:
 ## Unreleased${latestGitTag ? ` (latest: ${latestGitTag})` : ''}
 
 See repository for ongoing changes.
+
+## v0.5.0
+
+- **IntelliJ — Tool window "What to do":** Each of the **15 inspections** now has a short action summary ("What to do") and a **"See guide"** link to the relevant section in the best-practices guide. Table columns: Severity | Location | Inspection | What to do; detail bar shows full text and inline "See guide →" link.
+- **Decision Guide:** \`DECISION_GUIDE.md\` published with 10 decision sections (tables and trees): launch vs async, which scope to use, viewModelScope vs lifecycleScope, runTest vs runBlocking, which Dispatcher, error handling, cancel vs cancelChildren, loops and cooperation points, withTimeout vs withTimeoutOrNull, cold vs hot Flow. Each section includes ✅/❌ code examples.
+- **Detekt — 19 rules:** New **WithTimeoutScopeCancellation** (CANCEL_006): heuristic warning when \`withTimeout\` is not wrapped in try/catch handling \`TimeoutCancellationException\` (or parent). Suppress with \`@Suppress("WithTimeoutScopeCancellation")\` when scope cancellation is intentional.
+- **IntelliJ — 15 inspections:** New **WithTimeoutScopeCancellationInspection** with quick fix **Replace with withTimeoutOrNull**. AsyncWithoutAwait description extended with §5.3 EXCEPT_003 (exceptions in \`async\` deferred until \`await()\`; not sent to CoroutineExceptionHandler).
+- **Kotlin Coroutines Skill v2.0.0:** 13 new reference files (e.g. §1.4 awaitAll, §3.2 main-safe suspend, §4.6–4.7 withTimeout, §5.3 exception handler vs async, §6.3 setMain/resetMain, §8.2 lifecycle Flow, §9.1–9.4 Flow). **32 practices**, **34 triage entries**, **32 reference files**. SKILL.md and CONFIG.json version aligned to 2.0.0.
 
 ## v0.4.0
 
