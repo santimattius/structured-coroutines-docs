@@ -48,13 +48,13 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "Detekt Rules",
-    description: "Static analysis for your CI/CD pipeline. Catch common concurrency pitfalls before merge.",
+    description: "19 CI-friendly rules with import-based guards so only Kotlin files that use kotlinx.coroutines are analyzed—fewer false positives.",
     icon: "verified_user",
     path: "/docs/detekt-rules"
   },
   {
     title: "Gradle Plugin",
-    description: "Easy project integration and configuration. Zero-config setup for standard Android projects.",
+    description: "Compiler plugin integration, profiles, exclusions, and the cacheable structuredCoroutinesReport task for HTML/text CI configuration audits.",
     icon: "build_circle",
     path: "/docs/gradle-plugin"
   },
@@ -66,7 +66,7 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "IntelliJ Plugin",
-    description: "Enhanced IDE support, gutter icons for scopes, and visual debugging aids.",
+    description: "Real-time inspections, tool window, project-wide scan (Analyze → Scan Project for Coroutine Issues), quick fixes, and gutter icons.",
     icon: "extension",
     path: "/docs/intellij-plugin"
   },
@@ -261,7 +261,7 @@ A concise reference for **Kotlin Coroutines** and **structured concurrency** whe
 
 ## Tool Coverage
 
-The **Compiler Plugin**, **Detekt**, **Android Lint**, and **IntelliJ Plugin** implement subsets of these practices. Rule codes appear in diagnostics and link to this reference. See [Rules Overview](/docs/rules-overview) and each tool's documentation for which rules are enforced.
+The **Compiler Plugin**, **Detekt**, **Android Lint**, and **IntelliJ Plugin** implement subsets of these practices. Rule codes appear in diagnostics and link to this reference. **Detekt** and the **IntelliJ plugin** (v0.6.0+) only run coroutine-specific checks in files that import \`kotlinx.coroutines\`, which reduces false positives from unrelated APIs with similar names. See [Rules Overview](/docs/rules-overview) and each tool's documentation for which rules are enforced.
 `,
   "gradual-adoption": `
 # Gradual Adoption Guide
@@ -281,7 +281,7 @@ This guide helps you adopt the Structured Coroutines plugin in an existing codeb
 \`\`\`kotlin
 plugins {
     kotlin("jvm") version "2.3.0"
-    id("io.github.santimattius.structured-coroutines") version "0.3.0"
+    id("io.github.santimattius.structured-coroutines") version "0.6.0"
 }
 structuredCoroutines {
     useGradualProfile()  // All warnings; no build failure
@@ -292,7 +292,7 @@ structuredCoroutines {
 
 \`\`\`kotlin
 structuredCoroutines {
-    useStrictProfile()   // 7 rules error, 4 warning; violations block the build
+    useStrictProfile()   // 7 rules error, 5 warning; violations block the build
 }
 \`\`\`
 
@@ -333,13 +333,17 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 
 **Total: 12 rules** (7 errors, 5 warnings). Configured via [Gradle Plugin](/docs/gradle-plugin).
 
+## Gradle Plugin — Configuration report (CI)
+
+From **v0.6.0**, the cacheable \`structuredCoroutinesReport\` task (Gradle group **reporting**) writes HTML and/or plain-text reports of the active compiler-plugin configuration under \`build/reports/structured-coroutines/\` by default: project name, plugin version, severity counts, a per-rule table with codes (\`SCOPE_001\`, etc.) and links into [Best Practices](/docs/best-practices), plus exclusion details when configured. Use \`reportOutputDir\` and \`reportFormat\` (\`"html"\`, \`"text"\`, or \`"all"\`). See [Gradle Plugin](/docs/gradle-plugin).
+
 ## Detekt Rules (Static Analysis)
 
 **Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
 **Detekt-only (9):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, **ChannelNotClosed** (CHANNEL_001), **ConsumeEachMultipleConsumers** (CHANNEL_002), **FlowBlockingCall** (FLOW_001), **WithTimeoutScopeCancellation** (CANCEL_006).
 
-**Total: 19 rules.** See [Detekt Rules](/docs/detekt-rules).
+**Total: 19 rules.** All rules apply an **import guard**: files without a \`kotlinx.coroutines\` import are skipped, avoiding false positives from unrelated \`launch\`/\`async\` names. See [Detekt Rules](/docs/detekt-rules).
 
 ## Android Lint Rules (Static Analysis)
 
@@ -353,7 +357,7 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 
 ## IntelliJ/Android Studio Plugin (Real-time)
 
-**14 inspections** (including LoopWithoutYield, LifecycleAwareFlowCollection), **quick fixes** (including cooperation point in loops, replace cancel with cancelChildren, change superclass to Exception), **6 intentions** (including **Convert to runTest** for TEST_001), **gutter icons**, and the **Structured Coroutines tool window**. See [IntelliJ Plugin](/docs/intellij-plugin).
+**15 inspections** (including LoopWithoutYield, LifecycleAwareFlowCollection, WithTimeoutScopeCancellation), **quick fixes**, **6 intentions** (including **Convert to runTest** for TEST_001), **gutter icons**, and the **Structured Coroutines tool window**—including **Scan Project for Coroutine Issues** (Analyze menu and tool window toolbar) for aggregated results across Kotlin sources with progress and cancellation. Inspections use the same **import guard** as Detekt. See [IntelliJ Plugin](/docs/intellij-plugin).
 
 ## Comparison
 
@@ -362,7 +366,8 @@ This page summarizes all rules provided by the Structured Coroutines toolkit. Fo
 | Compiler Plugin | Compile | ✅ 7 | ✅ 5 | ✅ | ❌ |
 | Detekt Rules | Analysis | — | ✅ 19 | ✅ | ❌ |
 | Android Lint | Analysis | — | ✅ 21 | ✅ | ❌ |
-| IDE Plugin | Editing | — | ✅ 14 | ❌ | ✅ |
+| IDE Plugin | Editing | — | ✅ 15 | ❌ | ✅ |
+| Gradle report | CI / local | — | — | ✅ | ❌ |
 
 For adoption in existing projects without breaking the build, see [Gradual Adoption](/docs/gradual-adoption). For rule codes and a full checklist, see [Best Practices](/docs/best-practices).
 `,
@@ -376,7 +381,7 @@ Multiplatform annotations for marking structured coroutine scopes. The \`@Struct
 \`\`\`kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:0.3.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:0.6.0")
 }
 
 // Kotlin Multiplatform (commonMain)
@@ -384,7 +389,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.santimattius:structured-coroutines-annotations:0.3.0")
+                implementation("io.github.santimattius:structured-coroutines-annotations:0.6.0")
             }
         }
     }
@@ -426,7 +431,7 @@ class Repository {
 
 ## Recognition by Compiler and IDE
 
-The compiler plugin and IntelliJ plugin both recognize \`@StructuredScope\` on **function parameters** and **class properties**. For example, \`fun foo(@StructuredScope scope: CoroutineScope) { scope.launch { } }\` is not reported as an unstructured launch. The IDE resolves the scope to the parameter or property and checks for the annotation.
+The compiler plugin and IntelliJ plugin recognize \`@StructuredScope\` on **function parameters**, **class properties**, and **primary constructor parameters** (e.g. \`@property:StructuredScope private val ioScope\`). For example, \`fun foo(@StructuredScope scope: CoroutineScope) { scope.launch { } }\` is not reported as an unstructured launch. The IDE resolves the scope to the parameter, property, or constructor-injected scope and checks for the annotation.
 
 ## Framework Scopes (Auto-recognized)
 
@@ -441,6 +446,8 @@ JVM, JS, iOS, macOS, watchOS, tvOS, Linux, Windows, WASM. Use the \`annotations\
 
 Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 19 rules** (10 compiler-plugin parity + 9 Detekt-only). Use for multiplatform projects and CI/CD.
 
+From **v0.6.0**, every rule applies an **import guard** (\`CoroutinesImportFilter\`): if a \`.kt\` file has no import starting with \`kotlinx.coroutines\`, the rule returns immediately. That cuts false positives when unrelated APIs reuse names like \`launch\`, \`async\`, or \`Dispatchers\` (for example Android instrumented tests using \`ActivityScenario.launch\`).
+
 ## Installation
 
 \`\`\`kotlin
@@ -448,7 +455,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 }
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.5.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.6.0")
 }
 \`\`\`
 
@@ -480,12 +487,14 @@ dependencies {
 | FlowBlockingCall | Detekt-Only | Blocking calls inside \`flow { }\` (FLOW_001) |
 | WithTimeoutScopeCancellation | Detekt-Only | \`withTimeout\` without try/catch for \`TimeoutCancellationException\` (CANCEL_006); heuristic; suppress when intentional |
 
-Run: \`./gradlew detekt\`. Full config and per-rule details: [Detekt Rules](/docs/detekt-rules) and repository [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md).
+Run: \`./gradlew detekt\`. Full config and per-rule details: [Detekt Rules](/docs/detekt-rules) and repository [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/main/detekt-rules/README.md).
 `,
   "intellij-plugin": `
 # IntelliJ / Android Studio Plugin
 
 Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured Coroutines tool window** for structured concurrency. Full K1 and K2 Kotlin mode support.
+
+From **v0.6.0**, use **Analyze → Scan Project for Coroutine Issues** (or the **Scan Project** button in the tool window toolbar) to run every inspection across Kotlin sources under content roots—skipping typical build/generated paths—with a **background progress** indicator and **aggregated results** in the tool window; the scan is **cancellable**. Double-click a row to jump to the source. Inspections use the same **import guard** as Detekt: files without a \`kotlinx.coroutines\` import are skipped to avoid false positives. **Suspend in finally** relies on suspend-call resolution instead of a fragile name blocklist.
 
 ## Installation
 
@@ -494,6 +503,8 @@ Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured
 - **Build locally:** \`./gradlew :intellij-plugin:buildPlugin\` then install the ZIP from \`intellij-plugin/build/distributions/\`. Run sandbox: \`./gradlew :intellij-plugin:runIde\`.
 
 ## Inspections (15)
+
+The inspection list is the single source of truth for the project-wide scan: new inspections registered in the plugin are included automatically.
 
 | Inspection | Severity | Description |
 |------------|----------|-------------|
@@ -515,7 +526,7 @@ Real-time inspections, quick fixes, intentions, gutter icons, and a **Structured
 
 ## Structured Coroutines Tool Window
 
-**View → Tool Windows → Structured Coroutines.** Lists all findings for the **current file**. Columns: Severity | Location | Inspection | **What to do** (action summary per finding). Detail bar shows full "What to do" text and **"See guide →"** link to the best-practices guide. Use **Refresh** to run inspections; **double-click** a row to jump to the issue. Correctly recognizes \`@StructuredScope\` on parameters and properties.
+**View → Tool Windows → Structured Coroutines.** Lists findings for the **current file** (refresh) and, after **Scan Project**, **all issues** collected from the project scan. Columns: Severity | Location | Inspection | **What to do** (action summary per finding). Detail bar shows full "What to do" text and **"See guide →"** link to the best-practices guide. Use **Refresh** for the open file; use **Scan Project** for a full-repo pass; **double-click** a row to jump to the issue. Correctly recognizes \`@StructuredScope\` on parameters, properties, and **primary constructor parameters** (\`@property:StructuredScope\`).
 
 ## Quick Fixes
 
@@ -537,7 +548,7 @@ Scope type (viewModelScope, lifecycleScope, GlobalScope, etc.) and dispatcher co
   "gradle-plugin": `
 # Gradle Plugin
 
-Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. **12 rules** (7 errors, 5 warnings) are configurable. From **v0.3.0** you can use **profiles** and **exclude** source sets or projects; from **v0.4.0** the **LoopWithoutYield** (CANCEL_001) checker can be enabled/disabled via \`loopWithoutYield\`.
+Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. **12 rules** (7 errors, 5 warnings) are configurable. From **v0.3.0** you can use **profiles** and **exclude** source sets or projects; from **v0.4.0** the **LoopWithoutYield** (CANCEL_001) checker can be enabled/disabled via \`loopWithoutYield\`. From **v0.6.0**, the **structuredCoroutinesReport** task generates **HTML** and/or **plain-text** configuration reports for CI and audits.
 
 ## Installation
 
@@ -555,14 +566,36 @@ pluginManagement {
 // build.gradle.kts
 plugins {
     kotlin("jvm") version "2.3.0"   // Kotlin 2.3+ (K2) required
-    id("io.github.santimattius.structured-coroutines") version "0.3.0"
+    id("io.github.santimattius.structured-coroutines") version "0.6.0"
 }
 
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:0.3.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:0.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 }
 \`\`\`
+
+## Configuration report task (\`structuredCoroutinesReport\`)
+
+A **cacheable** task in the **reporting** group that materializes the active plugin configuration for humans and CI:
+
+\`\`\`bash
+./gradlew structuredCoroutinesReport
+# Default output:
+#   build/reports/structured-coroutines/structured-coroutines-report.html
+#   build/reports/structured-coroutines/structured-coroutines-report.txt
+\`\`\`
+
+The HTML report is **self-contained** (no external CSS/JS). Content includes project name, plugin version, timestamp, error/warning counts, a table of all **12** compiler rules with severities and anchors into the best-practices guide, and **exclusions** when \`excludeSourceSets\` / \`excludeProjects\` are set.
+
+\`\`\`kotlin
+structuredCoroutines {
+    reportFormat.set("html")   // "html" | "text" | "all"
+    reportOutputDir.set(layout.buildDirectory.dir("reports/coroutines"))
+}
+\`\`\`
+
+Pair this with \`compileKotlin\`, Detekt, and Lint in CI; archive reports as artifacts or post the text summary in PR comments. The upstream repo ships an internal CI reference (\`docs-local/CI_INTEGRATION.md\`) with a sample GitHub Actions workflow.
 
 ## Profiles (strict / gradual / relaxed)
 
@@ -570,16 +603,16 @@ Apply a preset with one line:
 
 \`\`\`kotlin
 structuredCoroutines {
-    useStrictProfile()   // Default: 7 error, 4 warning (greenfield)
-    // useGradualProfile()  // All rules warning (migration)
+    useStrictProfile()   // Default: 7 error, 5 warning (greenfield)
+    // useGradualProfile()  // All 12 rules warning (migration)
     // useRelaxedProfile()   // Same as gradual
 }
 \`\`\`
 
 | Profile | When to use | Effect |
 |---------|--------------|--------|
-| **Strict** | New projects or fail build on violations | 7 rules → error, 4 → warning |
-| **Gradual** / **Relaxed** | Migrating; build must not fail | All 11 rules → **warning** |
+| **Strict** | New projects or fail build on violations | 7 rules → error, 5 → warning |
+| **Gradual** / **Relaxed** | Migrating; build must not fail | All **12** rules → **warning** |
 
 See [Gradual Adoption](/docs/gradual-adoption) for the full migration path.
 
@@ -621,7 +654,7 @@ structuredCoroutines {
 | Error (default) | 7 | GlobalScope, inline scope, unstructured launch, runBlocking in suspend, Job() in builders, CancellationException subclass, async without await |
 | Warning (default) | 5 | Dispatchers.Unconfined, suspend in finally, CancellationException swallowed, redundant launch in coroutineScope, **loop without yield** (CANCEL_001) |
 
-Supports **JVM** and **Kotlin Multiplatform**. For KMP, apply \`kotlin(\"multiplatform\")\` and add annotations in \`commonMain\`. See [gradle-plugin/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/gradle-plugin/README.md) for KMP setup and troubleshooting.
+Supports **JVM** and **Kotlin Multiplatform**. For KMP, apply \`kotlin(\"multiplatform\")\` and add annotations in \`commonMain\`. See [gradle-plugin/README.md](https://github.com/santimattius/structured-coroutines/blob/main/gradle-plugin/README.md) for KMP setup and troubleshooting.
 `,
   "lint-rules": `
 # Android Lint Rules
@@ -633,7 +666,7 @@ Custom Android Lint rules for structured concurrency and **Android-specific** de
 \`\`\`kotlin
 // build.gradle.kts (Android module)
 dependencies {
-    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.4.0")
+    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.6.0")
 }
 \`\`\`
 
@@ -667,7 +700,7 @@ viewModelScope.launch(Dispatchers.Main) {
 }
 \`\`\`
 
-Run: \`./gradlew lint\`. Reports: \`app/build/reports/lint-results.html\`. Full docs: [lint-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/lint-rules/README.md).
+Run: \`./gradlew lint\`. Reports: \`app/build/reports/lint-results.html\`. Full docs: [lint-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/main/lint-rules/README.md).
 `,
   "compiler": `
 # Compiler Plugin
@@ -710,7 +743,7 @@ The plugin uses the K2/FIR API to detect:
 - Kotlin 2.3.0+ (K2)
 - Gradle 8.0+
 
-The **sample** project includes a \`compilation\` package with one example per compiler rule (7 errors, 4 warnings) for testing. See [compiler/README.md](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/compiler/README.md).
+The **sample** project includes a \`compilation\` package with one example per compiler rule (7 errors, 5 warnings) for testing. See [compiler/README.md](https://github.com/santimattius/structured-coroutines/blob/main/compiler/README.md).
 `,
   "kotlin-coroutines-skill": `
 # Kotlin Coroutines Skill
@@ -833,7 +866,7 @@ The skill enforces these rules in every response:
 - Tests use \`runTest\` with virtual time (\`advanceTimeBy\`, \`advanceUntilIdle\`). No real \`delay()\`.
 - Channels: prefer \`produce { }\`. Use \`for (x in channel)\` per consumer, not \`consumeEach\` for fan-out.
 
-Full rules are in **SYSTEM_PROMPT.md**, the triage table is in **SKILL.md**, and per-practice detail is in \`references/\`. Repository: [kotlin-coroutines-skill](https://github.com/santimattius/structured-coroutines/tree/features/0.3.0/kotlin-coroutines-skill).
+Full rules are in **SYSTEM_PROMPT.md**, the triage table is in **SKILL.md**, and per-practice detail is in \`references/\`. Repository: [kotlin-coroutines-skill](https://github.com/santimattius/structured-coroutines/tree/main/kotlin-coroutines-skill).
 `,
   "api": `
 # API Reference
@@ -848,7 +881,7 @@ Key artifacts and documentation are maintained in the repository:
 | \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (19) |
 | \`io.github.santimattius:structured-coroutines-lint-rules\` | Android Lint rules (21) |
 
-**Module docs** (repository [features/0.3.0](https://github.com/santimattius/structured-coroutines/tree/features/0.3.0)): [Gradle Plugin](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/gradle-plugin/README.md), [Detekt](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/detekt-rules/README.md), [Lint](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/lint-rules/README.md), [IntelliJ](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/intellij-plugin/README.md), [Annotations](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/annotations/README.md), [Compiler](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/compiler/README.md), [Kotlin Coroutines Skill](https://github.com/santimattius/structured-coroutines/blob/features/0.3.0/kotlin-coroutines-skill/README.md).
+**Module docs** (repository [main](https://github.com/santimattius/structured-coroutines/tree/main)): [Gradle Plugin](https://github.com/santimattius/structured-coroutines/blob/main/gradle-plugin/README.md), [Detekt](https://github.com/santimattius/structured-coroutines/blob/main/detekt-rules/README.md), [Lint](https://github.com/santimattius/structured-coroutines/blob/main/lint-rules/README.md), [IntelliJ](https://github.com/santimattius/structured-coroutines/blob/main/intellij-plugin/README.md), [Annotations](https://github.com/santimattius/structured-coroutines/blob/main/annotations/README.md), [Compiler](https://github.com/santimattius/structured-coroutines/blob/main/compiler/README.md), [Kotlin Coroutines Skill](https://github.com/santimattius/structured-coroutines/blob/main/kotlin-coroutines-skill/README.md).
 
 ## External Resources
 
@@ -865,6 +898,13 @@ Key artifacts and documentation are maintained in the repository:
 ## Unreleased${latestGitTag ? ` (latest: ${latestGitTag})` : ''}
 
 See repository for ongoing changes.
+
+## v0.6.0
+
+- **Gradle — \`structuredCoroutinesReport\`:** Cacheable **reporting**-group task that writes **self-contained HTML** and **plain-text** reports under \`build/reports/structured-coroutines/\` (defaults): project metadata, severity counts, all **12** compiler rules with links into the best-practices guide, and configured exclusions. New DSL: \`reportOutputDir\`, \`reportFormat\` (\`"html"\` | \`"text"\` | \`"all"\`). Plugin \`VERSION\` and published coordinates aligned to **0.6.0**. The main repository adds a maintainer CI guide with a full **GitHub Actions** example (\`compileKotlin\`, \`structuredCoroutinesReport\`, Detekt with SARIF, Lint, artifact upload, optional PR comment).
+- **IntelliJ — Project-wide scan:** **Analyze → Scan Project for Coroutine Issues** and tool-window **Scan Project** button run every inspection across Kotlin sources (content roots; skips typical \`build\`/\`.gradle\`/generated paths) on a **background** thread with **progress** and **cancellation**; results aggregate in the tool window; **double-click** navigates to the source. Panel registry uses a per-project weak map so the action does not leak \`Project\` instances.
+- **Detekt & IntelliJ — Import guard:** \`CoroutinesImportFilter\` ensures **no rule or inspection runs** on files that do not import \`kotlinx.coroutines\`, eliminating many false positives from name collisions (e.g. Android \`ActivityScenario.launch\`). **SuspendInFinally** (IDE) drops the old name blocklist and uses **suspend-call resolution**; **ScopeAnalyzer** now resolves **primary constructor** parameters annotated with \`@property:StructuredScope\`.
+- **No new rule codes** in 0.6.0; rule counts remain compiler **12**, Detekt **19**, Lint **21**, IntelliJ **15**.
 
 ## v0.5.0
 
