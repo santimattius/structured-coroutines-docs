@@ -60,18 +60,19 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ code, lang }) => {
   };
 
   return (
-    <div className="group relative my-10 overflow-hidden rounded-2xl border border-slate-700/80 bg-[#0f172a] shadow-2xl">
-      <div className="flex items-center justify-between bg-slate-800/60 px-6 py-3 border-b border-slate-700/80">
+    <div className="group relative my-12 overflow-hidden rounded-2xl border border-slate-700/80 bg-[#0f172a] shadow-2xl">
+      <div className="flex items-center justify-between bg-slate-800/60 px-6 py-3.5 border-b border-slate-700/80">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{lang || 'code'}</span>
-        <button 
+        <button
           onClick={handleCopy}
+          aria-label={copied ? 'Code copied' : 'Copy code'}
           className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-violet-300 transition-all"
         >
           <span className="material-symbols-outlined text-[16px]">{copied ? 'check' : 'content_copy'}</span>
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <div className="p-6 sm:p-8 font-mono text-[13px] sm:text-sm leading-relaxed overflow-x-auto custom-scrollbar text-slate-300">
+      <div className="px-6 py-8 sm:px-8 sm:py-10 font-mono text-[13px] sm:text-sm leading-[1.85] overflow-x-auto custom-scrollbar text-slate-300">
         {highlight(normalizedCode)}
       </div>
     </div>
@@ -116,13 +117,15 @@ function getTocFromMarkdown(md: string): { level: 2 | 3; text: string; id: strin
   return entries;
 }
 
-/** Renders one segment (no **bold**): `code`, [links], images. Pushes to out and uses keyPrefix/keyIdx. */
+/**
+ * Renders a plain text segment: splits on `code`, then handles links and images.
+ * Bold and italic are handled at a higher level so they can span across code spans.
+ */
 function processSegment(
   segment: string,
   keyPrefix: string,
   keyIdxRef: { current: number },
-  out: React.ReactNode[],
-  allowBold: boolean
+  out: React.ReactNode[]
 ) {
   const parts = segment.split(/(`[^`]*`)/g);
   const push = (node: React.ReactNode) => {
@@ -134,7 +137,7 @@ function processSegment(
   parts.forEach((part) => {
     if (part.startsWith('`') && part.endsWith('`')) {
       push(
-        <code key={k()} className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-sm sm:text-base font-mono font-bold">
+        <code key={k()} className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light px-2 py-0.5 rounded-md text-[0.85em] font-mono font-semibold">
           {part.slice(1, -1)}
         </code>
       );
@@ -144,12 +147,10 @@ function processSegment(
     const linkedImageRegex = /\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)/g;
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
     const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-    const boldRegex = /\*\*([^*]+)\*\*/g;
 
     const linkedImgMatches: { index: number; length: number; alt: string; imgUrl: string; linkUrl: string }[] = [];
     const linkMatches: { index: number; length: number; text: string; url: string }[] = [];
     const imageMatches: { index: number; length: number; alt: string; src: string }[] = [];
-    const boldMatches: { index: number; length: number; inner: string }[] = [];
     let m;
     while ((m = linkedImageRegex.exec(part)) !== null) {
       linkedImgMatches.push({ index: m.index, length: m[0].length, alt: m[1], imgUrl: m[2], linkUrl: m[3] });
@@ -164,22 +165,15 @@ function processSegment(
         imageMatches.push({ index: m.index, length: m[0].length, alt: m[1], src: m[2] });
       }
     }
-    if (allowBold) {
-      while ((m = boldRegex.exec(part)) !== null) {
-        boldMatches.push({ index: m.index, length: m[0].length, inner: m[1] });
-      }
-    }
 
     type InlineEv =
       | { type: 'linkedImage'; index: number; length: number; alt: string; imgUrl: string; linkUrl: string }
       | { type: 'link'; index: number; length: number; text: string; url: string }
-      | { type: 'image'; index: number; length: number; alt: string; src: string }
-      | { type: 'bold'; index: number; length: number; inner: string };
+      | { type: 'image'; index: number; length: number; alt: string; src: string };
     const sorted: InlineEv[] = [
       ...linkedImgMatches.map((x) => ({ type: 'linkedImage' as const, ...x })),
       ...linkMatches.map((x) => ({ type: 'link' as const, ...x })),
       ...imageMatches.map((x) => ({ type: 'image' as const, ...x })),
-      ...boldMatches.map((x) => ({ type: 'bold' as const, ...x })),
     ].sort((a, b) => a.index - b.index);
 
     let lastEnd = 0;
@@ -189,42 +183,18 @@ function processSegment(
       if (ev.type === 'linkedImage') {
         const img = <img src={ev.imgUrl} alt={ev.alt} className="inline-block h-6 align-middle" />;
         if (ev.linkUrl.startsWith('http')) {
-          push(
-            <a key={k()} href={ev.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex align-middle mr-2">
-              {img}
-            </a>
-          );
+          push(<a key={k()} href={ev.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex align-middle mr-2">{img}</a>);
         } else {
-          push(
-            <Link key={k()} to={ev.linkUrl} className="inline-flex align-middle mr-2">
-              {img}
-            </Link>
-          );
+          push(<Link key={k()} to={ev.linkUrl} className="inline-flex align-middle mr-2">{img}</Link>);
         }
       } else if (ev.type === 'link') {
         if (ev.url.startsWith('http')) {
-          push(
-            <a key={k()} href={ev.url} target="_blank" rel="noopener noreferrer" className="text-primary font-bold underline hover:no-underline">
-              {ev.text}
-            </a>
-          );
+          push(<a key={k()} href={ev.url} target="_blank" rel="noopener noreferrer" className="text-primary font-bold underline underline-offset-2 hover:text-primary/80 hover:decoration-2 transition-colors">{ev.text}</a>);
         } else {
-          push(
-            <Link key={k()} to={ev.url} className="text-primary font-bold underline hover:no-underline">
-              {ev.text}
-            </Link>
-          );
+          push(<Link key={k()} to={ev.url} className="text-primary font-bold underline underline-offset-2 hover:text-primary/80 hover:decoration-2 transition-colors">{ev.text}</Link>);
         }
-      } else if (ev.type === 'image') {
-        push(
-          <img key={k()} src={ev.src} alt={ev.alt} className="inline-block h-6 align-middle" />
-        );
       } else {
-        push(
-          <strong key={k()} className="font-bold text-slate-900 dark:text-white">
-            {ev.inner}
-          </strong>
-        );
+        push(<img key={k()} src={ev.src} alt={ev.alt} className="inline-block h-6 align-middle" />);
       }
       lastEnd = ev.index + ev.length;
     }
@@ -232,23 +202,66 @@ function processSegment(
   });
 }
 
-/** Parses inline markdown: **bold**, `code`, and [text](url). Bold is processed first so **`code`** and **text** both render as bold. */
+/**
+ * Finds *italic* spans in `text` and renders them as <em>, calling processSegment
+ * for the content inside each span (so `code` and [links] inside italic work correctly).
+ * Plain text outside italic spans is also passed to processSegment.
+ */
+function processWithItalic(
+  text: string,
+  keyPrefix: string,
+  keyIdxRef: { current: number },
+  out: React.ReactNode[]
+) {
+  // Single *italic* — not adjacent to another * (avoids false matches inside **)
+  const italicRe = /(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g;
+  let lastEnd = 0;
+  let m: RegExpExecArray | null;
+
+  while ((m = italicRe.exec(text)) !== null) {
+    if (m.index > lastEnd) {
+      processSegment(text.slice(lastEnd, m.index), keyPrefix, keyIdxRef, out);
+    }
+    const italicInner: React.ReactNode[] = [];
+    // Process the italic content so `code` and links inside it render correctly
+    processSegment(m[1], keyPrefix, keyIdxRef, italicInner);
+    out.push(
+      <em key={`${keyPrefix}-${keyIdxRef.current++}`} className="italic text-slate-700 dark:text-slate-300">
+        {italicInner}
+      </em>
+    );
+    lastEnd = m.index + m[0].length;
+  }
+  if (lastEnd < text.length) {
+    processSegment(text.slice(lastEnd), keyPrefix, keyIdxRef, out);
+  }
+}
+
+/**
+ * Parses inline markdown: **bold**, *italic*, `code`, [links](url), and images.
+ * Precedence: bold (**) is split first at the top level, then italic (*) is found
+ * within each segment, and finally processSegment handles `code` and links.
+ * This order ensures italic can span across `code` spans correctly.
+ */
 const processInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
   const segments: React.ReactNode[] = [];
   const keyIdxRef = { current: 0 };
 
+  // Split on ** for bold first
   const boldParts = text.split(/\*\*/);
   for (let i = 0; i < boldParts.length; i++) {
     if (i % 2 === 1) {
+      // Bold content: process inner for italic, code, and links
       const inner: React.ReactNode[] = [];
-      processSegment(boldParts[i], keyPrefix, keyIdxRef, inner, false);
+      processWithItalic(boldParts[i], keyPrefix, keyIdxRef, inner);
       segments.push(
         <strong key={`${keyPrefix}-${keyIdxRef.current++}`} className="font-bold text-slate-900 dark:text-white">
           {inner}
         </strong>
       );
     } else {
-      processSegment(boldParts[i], keyPrefix, keyIdxRef, segments, true);
+      // Non-bold content: find italic spans, then code and links
+      processWithItalic(boldParts[i], keyPrefix, keyIdxRef, segments);
     }
   }
   return segments;
@@ -300,13 +313,17 @@ const DocPage: React.FC = () => {
       }
 
       if (line.startsWith('# ')) {
-        blocks.push(<h1 key={i} className="text-5xl lg:text-7xl font-black text-slate-900 dark:text-white mt-12 mb-10 tracking-tighter leading-tight">{processInlineMarkdown(line.replace('# ', ''), `h1-${i}`)}</h1>);
+        blocks.push(
+          <h1 key={i} className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mt-8 mb-6 tracking-tighter leading-[1.1]">
+            {processInlineMarkdown(line.replace('# ', ''), `h1-${i}`)}
+          </h1>
+        );
       } else if (line.startsWith('## ')) {
         const entry = tocEntries[tocIndex++];
         const id = entry?.id ?? headingToId(line);
         blocks.push(
-          <h2 key={i} id={id} className="text-3xl font-black text-slate-900 dark:text-white mt-20 mb-8 tracking-tight flex items-center gap-4 scroll-mt-24">
-            <span className="h-10 w-2 rounded-full bg-primary shadow-sm shadow-primary/40 shrink-0" aria-hidden />
+          <h2 key={i} id={id} className="text-2xl font-black text-slate-900 dark:text-white mt-14 mb-5 tracking-tight flex items-center gap-3 scroll-mt-24">
+            <span className="h-7 w-1.5 rounded-full bg-primary shadow-sm shadow-primary/40 shrink-0" aria-hidden />
             <span className="min-w-0">{processInlineMarkdown(line.replace('## ', ''), `h2-${i}`)}</span>
             <a href={`#${id}`} className="heading-anchor shrink-0" aria-label={`Link to section: ${entry?.text ?? id}`}>#</a>
           </h2>
@@ -315,7 +332,7 @@ const DocPage: React.FC = () => {
         const entry = tocEntries[tocIndex++];
         const id = entry?.id ?? headingToId(line);
         blocks.push(
-          <h3 key={i} id={id} className="text-2xl font-bold text-slate-900 dark:text-white mt-14 mb-6 flex items-center gap-3 scroll-mt-24">
+          <h3 key={i} id={id} className="text-xl font-bold text-slate-900 dark:text-white mt-10 mb-4 flex items-center gap-3 scroll-mt-24">
             <span className="min-w-0">{processInlineMarkdown(line.replace('### ', ''), `h3-${i}`)}</span>
             <a href={`#${id}`} className="heading-anchor shrink-0" aria-label={`Link to section: ${entry?.text ?? id}`}>#</a>
           </h3>
@@ -332,41 +349,88 @@ const DocPage: React.FC = () => {
             i++;
           }
           blocks.push(
-            <div key={i} className="my-10 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark shadow-xl shadow-slate-200/20 dark:shadow-none">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                    {tableRows[0]?.map((cell, ci) => (
-                      <th key={ci} className="p-5 text-xs font-black uppercase tracking-[0.2em] text-slate-400">{processInlineMarkdown(cell, `th-${i}-${ci}`)}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {tableRows.slice(1).map((row, ri) => (
-                    <tr key={ri} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                      {row.map((cell, ci) => (
-                        <td key={ci} className={`p-5 text-base ${ci === 0 ? 'font-black text-primary italic' : 'text-slate-600 dark:text-slate-400 font-medium'}`}>
-                          {processInlineMarkdown(cell, `cell-${ri}-${ci}`)}
-                        </td>
+            <div key={i} className="my-10 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark shadow-sm overflow-hidden">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full min-w-[540px] text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                      {tableRows[0]?.map((cell, ci) => (
+                        <th key={ci} className="px-5 py-4 text-xs font-black uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {processInlineMarkdown(cell, `th-${i}-${ci}`)}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {tableRows.slice(1).map((row, ri) => (
+                      <tr key={ri} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                        {row.map((cell, ci) => (
+                          <td key={ci} className={`px-5 py-4 text-sm leading-relaxed ${ci === 0 ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 font-normal'}`}>
+                            {processInlineMarkdown(cell, `cell-${ri}-${ci}`)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           );
-          continue; 
+          continue;
         }
       }
-      else if (line.trim().startsWith('- ')) {
+      else if (line.startsWith('#### ')) {
         blocks.push(
-          <li key={i} className="ml-8 list-none relative text-slate-600 dark:text-slate-300 text-lg sm:text-xl mb-4 pl-8 before:content-[''] before:absolute before:left-0 before:top-3.5 before:size-2.5 before:bg-primary/20 before:border-2 before:border-primary before:rounded-full">
-            {processInlineMarkdown(line.replace(/^\s*-\s+/, ''), `li-${i}`)}
-          </li>
+          <h4 key={i} className="text-base font-bold text-slate-900 dark:text-white mt-8 mb-3 uppercase tracking-wide">
+            {processInlineMarkdown(line.replace('#### ', ''), `h4-${i}`)}
+          </h4>
         );
       }
+      else if (line.trim() === '---' || line.trim() === '***') {
+        blocks.push(<hr key={i} className="my-12 border-slate-200 dark:border-slate-800" />);
+      }
+      else if (line.trim().startsWith('> ')) {
+        const quoteLines: React.ReactNode[] = [];
+        const startI = i;
+        while (i < lines.length && lines[i].trim().startsWith('> ')) {
+          quoteLines.push(
+            <p key={i} className="leading-[1.75]">
+              {processInlineMarkdown(lines[i].replace(/^\s*>\s+/, ''), `bq-p-${i}`)}
+            </p>
+          );
+          i++;
+        }
+        blocks.push(
+          <blockquote key={`bq-${startI}`} className="my-8 px-6 py-5 rounded-r-xl border-l-4 border-primary/50 bg-primary/5 dark:bg-primary/10 text-slate-600 dark:text-slate-300 italic text-base sm:text-lg space-y-2">
+            {quoteLines}
+          </blockquote>
+        );
+        continue;
+      }
+      else if (line.trim().startsWith('- ')) {
+        const listItems: React.ReactNode[] = [];
+        const startI = i;
+        while (i < lines.length && lines[i].trim().startsWith('- ')) {
+          listItems.push(
+            <li key={i} className="list-none relative text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-[1.75] pl-7 before:content-[''] before:absolute before:left-0 before:top-[0.6em] before:size-2 before:bg-primary/25 before:border-2 before:border-primary before:rounded-full">
+              {processInlineMarkdown(lines[i].replace(/^\s*-\s+/, ''), `li-${i}`)}
+            </li>
+          );
+          i++;
+        }
+        blocks.push(
+          <ul key={`ul-${startI}`} className="my-8 space-y-4 ml-2">
+            {listItems}
+          </ul>
+        );
+        continue;
+      }
       else if (line.trim() !== '') {
-        blocks.push(<p key={i} className="text-slate-600 dark:text-slate-300 text-lg sm:text-xl leading-relaxed font-medium mb-8">{processInlineMarkdown(line, `p-${i}`)}</p>);
+        blocks.push(
+          <p key={i} className="text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-[1.85] font-normal mb-6">
+            {processInlineMarkdown(line, `p-${i}`)}
+          </p>
+        );
       }
 
       i++;
@@ -376,10 +440,10 @@ const DocPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-[var(--docs-content-max,80rem)] mx-auto px-6 py-16 sm:px-10 lg:px-16 animate-in fade-in slide-in-from-bottom-6 duration-700 flex flex-col lg:flex-row gap-12 lg:gap-16">
+    <div className="w-full max-w-[var(--docs-content-max,80rem)] mx-auto px-6 py-12 sm:px-10 lg:px-16 xl:py-16 animate-in fade-in slide-in-from-bottom-6 duration-700 flex flex-col lg:flex-row gap-16 lg:gap-20">
       {/* Main column: breadcrumb + prose */}
       <div className="min-w-0 flex-1">
-        <nav aria-label="Breadcrumb" className="mb-10 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+        <nav aria-label="Breadcrumb" className="mb-10 flex items-center gap-3 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
           <Link to="/" className="hover:text-primary transition-colors">Home</Link>
           <span className="material-symbols-outlined text-[16px] text-slate-300" aria-hidden>chevron_right</span>
           <Link to="/docs/introduction" className="hover:text-primary transition-colors">Docs</Link>
@@ -418,17 +482,17 @@ const DocPage: React.FC = () => {
       {/* On this page — sticky TOC */}
       {tocEntries.length > 0 && (
         <aside
-          className="hidden xl:block w-56 shrink-0"
+          className="hidden lg:block w-52 shrink-0"
           aria-label="On this page"
         >
           <div className="sticky top-24">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">On this page</p>
-            <nav className="flex flex-col gap-1.5 custom-scrollbar max-h-[calc(100vh-10rem)] overflow-y-auto">
+            <nav className="flex flex-col gap-1 custom-scrollbar max-h-[calc(100vh-10rem)] overflow-y-auto">
               {tocEntries.map((entry) => (
                 <a
                   key={entry.id}
                   href={`#${entry.id}`}
-                  className={`text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light transition-colors py-1 border-l-2 border-transparent hover:border-primary pl-3 -ml-px`}
+                  className={`text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light transition-colors py-1 border-l-2 border-transparent hover:border-primary pl-3 -ml-px`}
                   style={entry.level === 3 ? { paddingLeft: '1.25rem' } : undefined}
                 >
                   {entry.text}

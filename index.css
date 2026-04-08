@@ -89,9 +89,46 @@
   background: #334155;
 }
 
-/* Prose: constrain line length for readability */
-.prose-doc {
-  max-width: var(--docs-prose-width);
+/* Prose: paragraph text is constrained by the flex layout; no max-width here
+   so that tables and code blocks can use the full column width. */
+
+/* Override Tailwind typography plugin defaults that conflict with our custom styles */
+.prose-doc :where(p):not(:where([class~="not-prose"] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.prose-doc :where(h1, h2, h3, h4):not(:where([class~="not-prose"] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.prose-doc :where(ul, ol):not(:where([class~="not-prose"] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+}
+.prose-doc :where(li):not(:where([class~="not-prose"] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.prose-doc :where(blockquote):not(:where([class~="not-prose"] *)) {
+  quotes: none;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+  font-style: normal;
+  border-left: none;
+  color: inherit;
+}
+.prose-doc :where(table):not(:where([class~="not-prose"] *)) {
+  font-size: inherit;
+}
+.prose-doc :where(code):not(:where([class~="not-prose"] *))::before,
+.prose-doc :where(code):not(:where([class~="not-prose"] *))::after {
+  content: none;
+}
+.prose-doc :where(hr):not(:where([class~="not-prose"] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 /* Reduce motion for users who prefer it */

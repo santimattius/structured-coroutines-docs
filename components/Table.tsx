@@ -9,29 +9,29 @@ const StatusIcon = ({ status }: { status: 'check' | 'warning' | 'none' }) => {
 
 const Table: React.FC = () => {
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark shadow-sm mt-8" role="region" aria-labelledby="comparison-table-caption">
+    <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark shadow-sm mt-8 overflow-hidden" role="region" aria-labelledby="comparison-table-caption">
       <div className="overflow-x-auto custom-scrollbar">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[560px] text-left border-collapse">
           <caption id="comparison-table-caption" className="sr-only">
             Feature comparison: Compiler Plugin, Detekt, Lint Rules, and IDE Plugin support per rule.
           </caption>
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-              <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white min-w-[200px]">Feature</th>
-              <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-400 text-center min-w-[100px]">Compiler</th>
-              <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-400 text-center min-w-[100px]">Detekt</th>
-              <th className="p-4 text-xs font-black uppercase tracking-widest text-slate-400 text-center min-w-[100px]">Lint</th>
-              <th className="p-4 text-xs font-black uppercase tracking-widest text-primary text-center min-w-[100px]">IDE Plugin</th>
+              <th className="px-5 py-4 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 min-w-[220px]">Feature</th>
+              <th className="px-5 py-4 text-xs font-black uppercase tracking-wider text-slate-400 text-center whitespace-nowrap min-w-[90px]">Compiler</th>
+              <th className="px-5 py-4 text-xs font-black uppercase tracking-wider text-slate-400 text-center whitespace-nowrap min-w-[90px]">Detekt</th>
+              <th className="px-5 py-4 text-xs font-black uppercase tracking-wider text-slate-400 text-center whitespace-nowrap min-w-[90px]">Lint</th>
+              <th className="px-5 py-4 text-xs font-black uppercase tracking-wider text-primary text-center whitespace-nowrap min-w-[100px]">IDE Plugin</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {COMPARISON_DATA.map((row, idx) => (
-              <tr key={idx} className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                <td className="p-4 text-sm font-semibold text-slate-900 dark:text-white">{row.feature}</td>
-                <td className="p-4 text-center"><StatusIcon status={row.compiler} /></td>
-                <td className="p-4 text-center"><StatusIcon status={row.detekt} /></td>
-                <td className="p-4 text-center"><StatusIcon status={row.lint} /></td>
-                <td className="p-4 text-center bg-primary/5"><StatusIcon status={row.ide} /></td>
+              <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <td className="px-5 py-4 text-sm font-medium text-slate-800 dark:text-slate-200 leading-snug">{row.feature}</td>
+                <td className="px-5 py-4 text-center"><StatusIcon status={row.compiler} /></td>
+                <td className="px-5 py-4 text-center"><StatusIcon status={row.detekt} /></td>
+                <td className="px-5 py-4 text-center"><StatusIcon status={row.lint} /></td>
+                <td className="px-5 py-4 text-center bg-primary/5 dark:bg-primary/10"><StatusIcon status={row.ide} /></td>
               </tr>
             ))}
           </tbody>

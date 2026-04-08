@@ -111,13 +111,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     key={i}
                     to={fullPath}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold ${
-                      isActive 
-                        ? 'bg-primary/10 text-primary dark:text-white shadow-sm' 
+                    className={`group flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all text-sm font-semibold ${
+                      isActive
+                        ? 'bg-primary/10 text-primary dark:text-white shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    <span className={`material-symbols-outlined text-[20px] ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                    <span className={`material-symbols-outlined text-[20px] transition-colors ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
                       {item.icon}
                     </span>
                     {item.title}
@@ -192,7 +192,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <kbd className="hidden lg:flex items-center rounded-md border border-slate-200 dark:border-slate-700 px-1.5 font-sans text-[10px] font-bold text-slate-400 shrink-0">⌘K</kbd>
               </div>
               {showSearchDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark shadow-xl overflow-hidden z-[100] max-h-[min(320px,70vh)] overflow-y-auto">
+                <div
+                  className="absolute top-full left-0 right-0 mt-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface-dark shadow-xl overflow-hidden z-[100] max-h-[min(320px,70vh)] overflow-y-auto"
+                  aria-live="polite"
+                  aria-label="Search results"
+                >
                   {searchResults.length > 0 ? (
                     <ul className="py-2" role="listbox">
                       {searchResults.map((item) => (
@@ -225,11 +229,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/docs/introduction" className="flex items-center justify-center rounded-xl h-10 px-5 bg-primary hover:bg-primary/90 transition-all text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20">
               Start
             </Link>
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
               className="lg:hidden flex items-center justify-center size-10 rounded-xl text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <span className="material-symbols-outlined">menu</span>
+              <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
             </button>
           </div>
         </div>
