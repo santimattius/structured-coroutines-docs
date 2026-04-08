@@ -750,7 +750,7 @@ The **sample** project includes a \`compilation\` package with one example per c
 
 Expert guidance for **any AI coding tool** that supports Agent Skills or custom instructions — **safe structured concurrency**, performance, and Kotlin 1.9/2.0+ best practices for Coroutines. **v2.0.0** includes **32 practices**, **34 triage entries**, and **32 reference files** (including §1.4 awaitAll, §3.2 main-safe suspend, §4.6–4.7 withTimeout, §5.3 exception handler vs async, §6.3 setMain/resetMain, §8.2 lifecycle Flow, §9.1–9.4 Flow).
 
-This skill is part of the [Structured Coroutines](https://github.com/santimattius/structured-coroutines) project. It encodes a single set of rules (scopes, dispatchers, exceptions, cancellation, testing, channels, Flow, Android lifecycle) so that **Claude, ChatGPT, Cursor, or other agents** give **consistent, correct** advice on Kotlin Coroutines. Inspired by the [Swift Concurrency Agent Skill](https://github.com/AvdLee/Swift-Concurrency-Agent-Skill) model.
+This skill is part of the [Structured Coroutines](https://github.com/santimattius/structured-coroutines) project. **SKILL.md** is the single entry point: it consolidates agent identity, strict rules, the triage playbook, and the required output format; **references/** holds one markdown file per practice (32 in v2.0.0) with Bad / Recommended / Why / Quick fix. Together they encode scopes, dispatchers, exceptions, cancellation, testing, channels, Flow, and Android lifecycle so that **Claude, ChatGPT, Cursor, or other agents** give **consistent, correct** advice on Kotlin Coroutines. Inspired by the [Swift Concurrency Agent Skill](https://github.com/AvdLee/Swift-Concurrency-Agent-Skill) model.
 
 ## Why This Skill Exists
 
@@ -760,13 +760,16 @@ This skill is part of the [Structured Coroutines](https://github.com/santimattiu
 
 ## What's Included
 
+\`\`\`text
+kotlin-coroutines-skill/
+├── SKILL.md
+└── references/
+\`\`\`
+
 | Asset | Description |
 |-------|-------------|
-| **SYSTEM_PROMPT.md** | Full system prompt: identity, strict rules, tone, and required output format (analysis → erroneous code → optimized code → explanation). |
-| **SKILL.md** | Playbook (triage): maps topic/error to the right reference file so the agent jumps to the relevant practice. |
-| **references/** | One markdown file per best practice (32 files in v2.0.0). Each has Bad / Recommended / Why / Quick fix. |
-| **CONFIG.json** | Metadata: name, description, version, triggers, and reference index. |
-| **EXAMPLES_SUITE.kt** | Kotlin examples with intentional anti-patterns (scope leaks, exception handling, Dispatchers) for testing the agent. |
+| **SKILL.md** | Triage playbook including the full **Agent Behavior Contract**: identity, strict rules, tone, output format (analysis → erroneous code → optimized code → explanation), and triage table (topic/error → reference file). |
+| **references/** | 32 markdown files, one per practice. Each has Bad / Recommended / Why / Quick fix. |
 
 **References by section:**
 
@@ -811,20 +814,20 @@ Claude Code supports this skill as a plugin via the marketplace.
 claude --plugin-dir /path/to/structured-coroutines/kotlin-coroutines-skill
 \`\`\`
 
-Once installed, the skill is available when you work on Kotlin/Android code. Claude Code reads **SKILL.md** (triage), **SYSTEM_PROMPT.md** (rules and output format), and **references/ref-*.md** on demand.
+Once installed, the skill is available when you work on Kotlin/Android code. Claude Code reads **SKILL.md** (Agent Behavior Contract, triage) and **references/ref-*.md** on demand.
 
 ### Option B: Claude (Projects — Custom Instructions)
 
 1. In Claude, open **Projects** and create or select a project.
 2. Go to **Project settings → Custom instructions**.
-3. Paste the full content of **SYSTEM_PROMPT.md**.
+3. Paste the **Agent Behavior Contract** section from **SKILL.md**.
 4. Optionally add: *"For Kotlin Coroutines questions, always use the structured output format: 1) Analysis, 2) Erroneous code, 3) Optimized code, 4) Technical explanation."*
 5. Save.
 
 ### Option C: ChatGPT (Custom GPTs)
 
 1. Create a new **Custom GPT** (ChatGPT Plus or Team).
-2. In **Configure → Instructions**, paste the full content of **SYSTEM_PROMPT.md**.
+2. In **Configure → Instructions**, paste the **Agent Behavior Contract** section from **SKILL.md**.
 3. Optionally upload the \`references/\` files to **Knowledge** so the GPT can reference them.
 4. Save and name the GPT (e.g. "Kotlin Coroutines Expert").
 
@@ -832,7 +835,7 @@ Once installed, the skill is available when you work on Kotlin/Android code. Cla
 
 1. In your repo, open or create \`.cursor/rules/\`.
 2. Create a file \`kotlin-coroutines.mdc\` (or \`.md\`).
-3. Paste the full content of **SYSTEM_PROMPT.md**.
+3. Paste the **Agent Behavior Contract** section from **SKILL.md**.
 4. Add a \`globs\` condition so the rule applies to Kotlin files: \`**/*.kt\`.
 5. Reload Cursor rules.
 
@@ -866,7 +869,7 @@ The skill enforces these rules in every response:
 - Tests use \`runTest\` with virtual time (\`advanceTimeBy\`, \`advanceUntilIdle\`). No real \`delay()\`.
 - Channels: prefer \`produce { }\`. Use \`for (x in channel)\` per consumer, not \`consumeEach\` for fan-out.
 
-Full rules are in **SYSTEM_PROMPT.md**, the triage table is in **SKILL.md**, and per-practice detail is in \`references/\`. Repository: [kotlin-coroutines-skill](https://github.com/santimattius/structured-coroutines/tree/main/kotlin-coroutines-skill).
+Full agent contract, rules, and triage live in **SKILL.md**; per-practice detail is in \`references/\`. Repository: [kotlin-coroutines-skill](https://github.com/santimattius/structured-coroutines/tree/main/kotlin-coroutines-skill).
 `,
   "api": `
 # API Reference
