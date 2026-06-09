@@ -48,25 +48,25 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "Detekt Rules",
-    description: "35 CI-friendly rules with import-based guards so only Kotlin files that use kotlinx.coroutines are analyzed—fewer false positives.",
+    description: "40 CI-friendly rules with import-based guards so only Kotlin files that use kotlinx.coroutines are analyzed—fewer false positives.",
     icon: "verified_user",
     path: "/docs/detekt-rules"
   },
   {
     title: "Gradle Plugin",
-    description: "Compiler plugin integration, profiles (Ktor backend, Compose, KMP), Detekt baseline, exclusions, and structuredCoroutinesReport with Learning Path for CI audits.",
+    description: "Compiler plugin integration, profiles (Android Compose, KMP, Ktor, Spring backend), Detekt baseline, exclusions, and structuredCoroutinesReport with Learning Path for CI audits.",
     icon: "build_circle",
     path: "/docs/gradle-plugin"
   },
   {
     title: "Lint Rules",
-    description: "Real-time feedback directly in Android Studio. Fix issues as you type with quick-fixes.",
+    description: "35 Android Lint detectors with real-time feedback in Android Studio—Compose lifecycle, side effects, and JVM interop quick fixes.",
     icon: "visibility",
     path: "/docs/lint-rules"
   },
   {
     title: "IntelliJ Plugin",
-    description: "28 inspections (21 quick fixes), tool window, project-wide scan (Analyze → Scan Project for Coroutine Issues), and gutter icons.",
+    description: "35 inspections (28+ quick fixes), Flow Chain Analyzer intention, tool window, project-wide scan, and gutter icons.",
     icon: "extension",
     path: "/docs/intellij-plugin"
   },
@@ -78,7 +78,7 @@ export const MODULES: ModuleCard[] = [
   },
   {
     title: "Kotlin Coroutines Skill",
-    description: "Agent Skill v2.0.0 for AI coding tools. 35+ rule codes, strict rules, triage playbook — scopes, dispatchers, concurrency, Flow, interop, KMP, backend JVM, and Android lifecycle.",
+    description: "Agent Skill v3.0.0 for AI coding tools. 51 documented patterns, 65+ triage entries, strict rules — Compose, testing, Flow, interop, KMP, backend JVM, and debugging.",
     icon: "smart_toy",
     path: "/docs/kotlin-coroutines-skill"
   }
@@ -119,6 +119,15 @@ export const COMPARISON_DATA: ComparisonRow[] = [
   { feature: "MainScope without cancel (KMP_003)", compiler: "none", detekt: "warning", lint: "none", ide: "none" },
   { feature: "Blocking calls in backend coroutines (BACKEND_001)", compiler: "none", detekt: "warning", lint: "none", ide: "none" },
   { feature: "ThreadLocal / MDC not propagated (BACKEND_002)", compiler: "none", detekt: "warning", lint: "none", ide: "none" },
+  { feature: "rememberCoroutineScope for init (COMPOSE_002)", compiler: "none", detekt: "none", lint: "warning", ide: "warning" },
+  { feature: "Side effects in Composable body (COMPOSE_003)", compiler: "none", detekt: "none", lint: "warning", ide: "none" },
+  { feature: "Hardcoded Dispatcher in class (TEST_005)", compiler: "none", detekt: "warning", lint: "none", ide: "warning" },
+  { feature: "Missing advanceUntilIdle in runTest (TEST_006)", compiler: "none", detekt: "none", lint: "none", ide: "warning" },
+  { feature: "FlatMap operator choice (FLOW_009)", compiler: "none", detekt: "none", lint: "none", ide: "warning" },
+  { feature: "SharedFlow for one-shot events (FLOW_011)", compiler: "none", detekt: "warning", lint: "none", ide: "warning" },
+  { feature: "channelFlow vs callbackFlow (INTEROP_003)", compiler: "none", detekt: "warning", lint: "none", ide: "warning" },
+  { feature: "Blocking Future.get in coroutine (INTEROP_004)", compiler: "none", detekt: "warning", lint: "warning", ide: "warning" },
+  { feature: "Missing CoroutineName (DEBUG_001, opt-in)", compiler: "none", detekt: "warning", lint: "none", ide: "none" },
   { feature: "Quick Fixes / Auto-Correction", compiler: "none", detekt: "none", lint: "check", ide: "check" },
 ];
 
@@ -128,7 +137,7 @@ export const DOCS_CONTENT: Record<string, string> = {
 
 **Structured Coroutines** is a comprehensive toolkit for enforcing **structured concurrency** in Kotlin Coroutines, inspired by Swift Concurrency. It provides multiple layers of protection through compile-time checks and static analysis.
 
-[![Kotlin 2.3.0](https://img.shields.io/badge/Kotlin-2.3.0-blue.svg)](https://kotlinlang.org) [![Toolkit 0.9.0](https://img.shields.io/badge/Toolkit-0.9.0-purple.svg)](https://github.com/santimattius/structured-coroutines/releases) [![Coroutines 1.11.0](https://img.shields.io/badge/kotlinx--coroutines-1.11.0-blue.svg)](https://github.com/Kotlin/kotlinx.coroutines) [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/santimattius/structured-coroutines/blob/main/LICENSE) [![Multiplatform](https://img.shields.io/badge/Multiplatform-Supported-orange.svg)](https://kotlinlang.org/docs/multiplatform.html)
+[![Kotlin 2.3.0](https://img.shields.io/badge/Kotlin-2.3.0-blue.svg)](https://kotlinlang.org) [![Toolkit 1.0.0](https://img.shields.io/badge/Toolkit-1.0.0-purple.svg)](https://github.com/santimattius/structured-coroutines/releases) [![Coroutines 1.11.0](https://img.shields.io/badge/kotlinx--coroutines-1.11.0-blue.svg)](https://github.com/Kotlin/kotlinx.coroutines) [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/santimattius/structured-coroutines/blob/main/LICENSE) [![Multiplatform](https://img.shields.io/badge/Multiplatform-Supported-orange.svg)](https://kotlinlang.org/docs/multiplatform.html)
 
 ## Why This Toolkit?
 
@@ -144,10 +153,10 @@ Kotlin Coroutines are powerful but can be misused, leading to:
 This toolkit enforces structured concurrency best practices through:
 
 1. **Compiler Plugin** — Errors at compile time (K2/FIR)
-2. **Detekt Rules** — Static analysis warnings
-3. **Android Lint Rules** — Android-specific static analysis with quick fixes
-4. **IntelliJ/Android Studio Plugin** — Real-time IDE analysis, quick fixes, and tool window
-5. **Kotlin Coroutines Skill** — Agent Skill for AI tools (Claude, ChatGPT, Cursor) for consistent code review and refactoring advice
+2. **Detekt Rules** — 40 static analysis rules for CI and KMP
+3. **Android Lint Rules** — 35 detectors with Android/Compose-specific quick fixes
+4. **IntelliJ/Android Studio Plugin** — 35 inspections, Flow Chain Analyzer, and tool window
+5. **Kotlin Coroutines Skill v3.0.0** — Agent Skill for AI tools (Claude, ChatGPT, Cursor) covering **51 documented patterns**
 
 ## Toolkit Components
 
@@ -240,11 +249,15 @@ A concise reference for **Kotlin Coroutines** and **structured concurrency** whe
 | \`TEST_002\` | Uncontrolled fire-and-forget in tests |
 | \`TEST_003\` | Replacing Dispatchers.Main in tests |
 | \`TEST_004\` | runBlocking instead of runTest in tests |
+| \`TEST_005\` | Hardcoded Dispatchers in production classes (testability) |
+| \`TEST_006\` | Coroutine work not completed before assertions in runTest |
 | \`CHANNEL_001\` | Forgetting to close manual channels |
 | \`CHANNEL_002\` | Sharing consumeEach among multiple consumers |
 | \`ARCH_001\` | General architecture recommendations |
 | \`ARCH_002\` | Lifecycle-aware Flow collection (Android) |
 | \`COMPOSE_001\` | collectAsState without lifecycle awareness (Compose) |
+| \`COMPOSE_002\` | rememberCoroutineScope for initialization in Composable |
+| \`COMPOSE_003\` | Side effects in Composable body without SideEffect |
 | \`FLOW_001\` | Blocking code in flow { } builder |
 | \`FLOW_002\` | Cold vs hot flows (StateFlow / SharedFlow) |
 | \`FLOW_003\` | collectLatest cancels previous work |
@@ -253,12 +266,17 @@ A concise reference for **Kotlin Coroutines** and **structured concurrency** whe
 | \`FLOW_006\` | stateIn with SharingStarted.Eagerly in ViewModel/lifecycle scope |
 | \`FLOW_007\` | launchIn with GlobalScope or inline CoroutineScope |
 | \`FLOW_008\` | Side effects inside Flow map operator |
+| \`FLOW_009\` | Wrong flatMapLatest / flatMapMerge / flatMapConcat choice |
 | \`FLOW_010\` | Exposing MutableStateFlow / MutableSharedFlow publicly |
+| \`FLOW_011\` | SharedFlow for one-shot events (navigation, snackbars) |
 | \`INTEROP_001\` | suspendCoroutine without cancellation support |
 | \`INTEROP_002\` | callbackFlow without awaitClose |
+| \`INTEROP_003\` | channelFlow vs callbackFlow misuse |
+| \`INTEROP_004\` | Blocking Future.get in coroutines (use await) |
 | \`KMP_001\` | Dispatchers.IO in commonMain (KMP) |
 | \`KMP_002\` | runBlocking in commonMain / commonTest (KMP) |
 | \`KMP_003\` | MainScope without cancel in lifecycle cleanup |
+| \`DEBUG_001\` | Missing CoroutineName for debugging (opt-in) |
 
 ## Key Practices by Category
 
@@ -272,19 +290,21 @@ A concise reference for **Kotlin Coroutines** and **structured concurrency** whe
 
 **5. Exceptions:** Use \`SupervisorJob\` at scope level or \`supervisorScope { }\`, not as an argument to a single builder. Use normal \`Exception\`/ \`RuntimeException\` for domain errors, not \`CancellationException\`.
 
-**6. Testing:** Use \`runTest\`, virtual time, and \`TestDispatcher\`; avoid real \`delay()\` with \`runBlocking\`. Prefer \`runTest\` over bare \`runBlocking\` in \`@Test\` methods (\`TEST_004\`).
+**6. Testing:** Use \`runTest\`, virtual time, and \`TestDispatcher\`; avoid real \`delay()\` with \`runBlocking\`. Prefer \`runTest\` over bare \`runBlocking\` in \`@Test\` methods (\`TEST_004\`). Inject \`CoroutineDispatcher\` in production classes instead of hardcoding \`Dispatchers.IO\`/\`Main\`/\`Default\` (\`TEST_005\`). Call \`advanceUntilIdle()\` before assertions when code under test launches internal coroutines (\`TEST_006\`).
 
 **7. Channels:** Prefer \`produce { }\`; if using manual \`Channel\`, define when \`close()\` is called. Do not share \`consumeEach\` across multiple consumers.
 
-**8. Architecture (Android):** Collect Flow with \`repeatOnLifecycle(Lifecycle.State.STARTED)\` or \`flowWithLifecycle\`. In Jetpack Compose, prefer \`collectAsStateWithLifecycle()\` over \`collectAsState()\` (\`COMPOSE_001\`).
+**8. Architecture (Android):** Collect Flow with \`repeatOnLifecycle(Lifecycle.State.STARTED)\` or \`flowWithLifecycle\`. In Jetpack Compose, prefer \`collectAsStateWithLifecycle()\` over \`collectAsState()\` (\`COMPOSE_001\`). Use \`LaunchedEffect\` for initialization, not \`rememberCoroutineScope().launch\` in the Composable body (\`COMPOSE_002\`). Wrap analytics/logging side effects in \`SideEffect { }\` (\`COMPOSE_003\`).
 
-**9. Flow:** Do not perform blocking calls inside \`flow { }\`; use \`flowOn(Dispatchers.IO)\` or suspend APIs. Use StateFlow for state and SharedFlow for events with appropriate replay/buffer. Expose \`StateFlow\`/\`SharedFlow\` read-only types, not \`MutableStateFlow\`/\`MutableSharedFlow\` (\`FLOW_010\`). Add \`.catch { }\` upstream of terminal operators (\`collect\`, \`collectLatest\`, \`launchIn\`) when the chain has intermediate operators (\`FLOW_005\`). Prefer \`SharingStarted.WhileSubscribed\` over \`Eagerly\` in \`viewModelScope\`/\`lifecycleScope\` (\`FLOW_006\`). Never use \`.launchIn(GlobalScope)\` or inline scopes (\`FLOW_007\`). Keep \`.map\` pure — use \`.onEach\` for side effects (\`FLOW_008\`).
+**9. Flow:** Do not perform blocking calls inside \`flow { }\`; use \`flowOn(Dispatchers.IO)\` or suspend APIs. Use StateFlow for state; prefer \`Channel(BUFFERED)\` + \`receiveAsFlow()\` for one-shot events over \`MutableSharedFlow(replay=0)\` (\`FLOW_011\`). Choose \`flatMapLatest\`, \`flatMapMerge\`, or \`flatMapConcat\` deliberately (\`FLOW_009\`). Expose \`StateFlow\`/\`SharedFlow\` read-only types, not \`MutableStateFlow\`/\`MutableSharedFlow\` (\`FLOW_010\`). Add \`.catch { }\` upstream of terminal operators (\`collect\`, \`collectLatest\`, \`launchIn\`) when the chain has intermediate operators (\`FLOW_005\`). Prefer \`SharingStarted.WhileSubscribed\` over \`Eagerly\` in \`viewModelScope\`/\`lifecycleScope\` (\`FLOW_006\`). Never use \`.launchIn(GlobalScope)\` or inline scopes (\`FLOW_007\`). Keep \`.map\` pure — use \`.onEach\` for side effects (\`FLOW_008\`).
 
-**10. Interop (callbacks):** Use \`suspendCancellableCoroutine\` with \`invokeOnCancellation\` instead of \`suspendCoroutine\` (\`INTEROP_001\`). In \`callbackFlow { }\`, always call \`awaitClose { }\` to unregister listeners (\`INTEROP_002\`).
+**10. Interop (callbacks):** Use \`suspendCancellableCoroutine\` with \`invokeOnCancellation\` instead of \`suspendCoroutine\` (\`INTEROP_001\`). In \`callbackFlow { }\`, always call \`awaitClose { }\` to unregister listeners (\`INTEROP_002\`). Use \`callbackFlow\` for external callbacks with cleanup; \`channelFlow\` for internal multi-coroutine emission (\`INTEROP_003\`). Replace \`Future.get()\` with \`.await()\` from \`kotlinx-coroutines-jdk8\` or \`kotlinx-coroutines-guava\` (\`INTEROP_004\`).
 
 **11. Kotlin Multiplatform:** Do not use \`Dispatchers.IO\` in \`commonMain\` — inject a platform dispatcher (\`@IoDispatcher\`) or use \`expect\`/\`actual\` (\`KMP_001\`). No \`runBlocking\` in \`commonMain\`/\`commonTest\` (\`KMP_002\`). Cancel \`MainScope()\` in lifecycle cleanup (\`KMP_003\`).
 
 **12. Concurrency:** Prefer \`Mutex.withLock\` over \`synchronized\` in suspend code (\`CONCUR_001\`). Avoid unsynchronized shared \`var\`/mutable collections from parallel \`launch\` in the same scope — use \`async\`/\`awaitAll\` or proper synchronization (\`CONCUR_002\`).
+
+**14. Debugging (opt-in):** Add \`CoroutineName\` to \`launch\`/\`async\` for readable stack traces and Coroutines Debugger (\`DEBUG_001\`); enable via verbose Detekt profile.
 
 ## Quick Reference Checklist
 
@@ -301,7 +321,10 @@ A concise reference for **Kotlin Coroutines** and **structured concurrency** whe
 - Channels closed; \`consumeEach\` single consumer only
 - (Android) Flow collection with \`repeatOnLifecycle(STARTED)\`
 - (Compose) \`collectAsStateWithLifecycle()\` instead of \`collectAsState()\`
-- \`suspendCancellableCoroutine\` + \`invokeOnCancellation\` for callback bridges
+- (Compose) \`LaunchedEffect\` for init; \`SideEffect\` for analytics/logging
+- Tests use injected dispatchers; \`advanceUntilIdle()\` before assertions
+- One-shot events via \`Channel\`, not default \`MutableSharedFlow\`
+- \`callbackFlow\` + \`awaitClose\` for external callbacks; \`Future.await()\` not \`.get()\`
 - \`callbackFlow\` always ends with \`awaitClose { }\`
 - Mutable flows not exposed as public API
 - Flow chains with operators have \`.catch\` before terminal collect
@@ -328,7 +351,7 @@ This guide helps you adopt the Structured Coroutines plugin in an existing codeb
 | **2. Fix and suppress** | Same | Fix violations where possible; use \`@Suppress\` for justified exceptions. |
 | **3. Strict** | \`useStrictProfile()\` | Once the codebase is clean, switch to strict so new violations fail the build. |
 | **4. Platform** | \`useAndroidComposeProfile()\` or \`useKmpCommonProfile()\` | Strict + INTEROP_001/002 as **error**; use when Android Compose or KMP \`commonMain\` is in scope. |
-| **5. Backend** | \`useKtorBackendProfile()\` | Strict preset for Ktor/Spring JVM services; pair with \`ktor-backend-detekt.yml\`. |
+| **5. Backend** | \`useKtorBackendProfile()\` or \`useSpringBackendProfile()\` | Strict preset for Ktor/Spring JVM services; pair with \`ktor-backend-detekt.yml\` or \`spring-backend-detekt.yml\`. |
 | **6. Baseline** | \`baseline { }\` + \`generateCoroutinesBaseline\` | Track existing Detekt debt; report only new violations (\`REPORT_NEW_ONLY\`). |
 
 **Enable without breaking the build:**
@@ -336,7 +359,7 @@ This guide helps you adopt the Structured Coroutines plugin in an existing codeb
 \`\`\`kotlin
 plugins {
     kotlin("jvm") version "2.3.0"
-    id("io.github.santimattius.structured-coroutines") version "0.9.0"
+    id("io.github.santimattius.structured-coroutines") version "1.0.0"
 }
 structuredCoroutines {
     useGradualProfile()  // All warnings; no build failure
@@ -365,6 +388,14 @@ structuredCoroutines {
 \`\`\`kotlin
 structuredCoroutines {
     useKtorBackendProfile()
+}
+\`\`\`
+
+**Spring / JVM backend (v1.0.0+):**
+
+\`\`\`kotlin
+structuredCoroutines {
+    useSpringBackendProfile()  // Strict + INTEROP_001/002 as error; spring-backend-detekt.yml preset
 }
 \`\`\`
 
@@ -402,7 +433,7 @@ Use exclusions when you cannot fix or suppress yet. Prefer fixing or suppressing
 - [ ] Align Detekt / Android Lint with the same rules and severities if you use them.
 - [ ] When ready, switch to \`useStrictProfile()\` so new violations fail the build.
 - [ ] For Android Compose or KMP, consider \`useAndroidComposeProfile()\` or \`useKmpCommonProfile()\` after the baseline is clean.
-- [ ] For Ktor/Spring services, use \`useKtorBackendProfile()\` and the packaged \`ktor-backend-detekt.yml\`.
+- [ ] For Ktor/Spring services, use \`useKtorBackendProfile()\` or \`useSpringBackendProfile()\` and the packaged Detekt preset.
 - [ ] In monorepos, generate a Detekt baseline before raising severities; use \`generateCoroutinesBaseline\` / \`applyCoroutinesBaseline\`.
 
 See [Gradle Plugin](/docs/gradle-plugin) for full configuration (profiles, baseline, and exclusions).
@@ -428,9 +459,9 @@ From **v0.6.0**, the cacheable \`structuredCoroutinesReport\` task (Gradle group
 
 **Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only (25):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, ChannelNotClosed (CHANNEL_001), ConsumeEachMultipleConsumers (CHANNEL_002), FlowBlockingCall (FLOW_001), WithTimeoutScopeCancellation (CANCEL_006), SuspendCoroutineWithoutCancellation (INTEROP_001), CallbackFlowWithoutAwaitClose (INTEROP_002), MutableFlowExposed (FLOW_010), MissingCatchInFlow (FLOW_005), SequentialAsyncAwait (CONCUR_003), RunBlockingInsteadOfRunTest (TEST_004), DispatchersIOInCommonMain (KMP_001), **SynchronizedInCoroutine** (CONCUR_001), **SharedMutableStateInCoroutine** (CONCUR_002), **RedundantWithContext** (CONCUR_004, opt-in), **StateInWithEagerlyStrategy** (FLOW_006), **SideEffectInMapOperator** (FLOW_008, opt-in), **RunBlockingInCommonMain** (KMP_002), **MainScopeWithoutCancel** (KMP_003), **BlockingCallInCoroutineBackend** (BACKEND_001), **ThreadLocalNotPropagated** (BACKEND_002).
+**Detekt-only (30):** BlockingCallInCoroutine, RunBlockingWithDelayInTest, ExternalScopeLaunch, LoopWithoutYield, ScopeReuseAfterCancel, ChannelNotClosed (CHANNEL_001), ConsumeEachMultipleConsumers (CHANNEL_002), FlowBlockingCall (FLOW_001), WithTimeoutScopeCancellation (CANCEL_006), SuspendCoroutineWithoutCancellation (INTEROP_001), CallbackFlowWithoutAwaitClose (INTEROP_002), MutableFlowExposed (FLOW_010), MissingCatchInFlow (FLOW_005), SequentialAsyncAwait (CONCUR_003), RunBlockingInsteadOfRunTest (TEST_004), DispatchersIOInCommonMain (KMP_001), SynchronizedInCoroutine (CONCUR_001), SharedMutableStateInCoroutine (CONCUR_002), RedundantWithContext (CONCUR_004, opt-in), StateInWithEagerlyStrategy (FLOW_006), SideEffectInMapOperator (FLOW_008, opt-in), RunBlockingInCommonMain (KMP_002), MainScopeWithoutCancel (KMP_003), BlockingCallInCoroutineBackend (BACKEND_001), ThreadLocalNotPropagated (BACKEND_002), **HardcodedDispatcherInClass** (TEST_005), **SharedFlowForOneshotEvents** (FLOW_011), **ChannelFlowVsCallbackFlow** (INTEROP_003), **BlockingFutureGet** (INTEROP_004), **MissingCoroutineName** (DEBUG_001, opt-in).
 
-**Total: 35 rules.** All rules apply an **import guard**: files without a \`kotlinx.coroutines\` import are skipped, avoiding false positives from unrelated \`launch\`/\`async\` names. See [Detekt Rules](/docs/detekt-rules).
+**Total: 40 rules.** All rules apply an **import guard**: files without a \`kotlinx.coroutines\` import are skipped, avoiding false positives from unrelated \`launch\`/\`async\` names. See [Detekt Rules](/docs/detekt-rules).
 
 ## Android Lint Rules (Static Analysis)
 
@@ -438,23 +469,25 @@ From **v0.6.0**, the cacheable \`structuredCoroutinesReport\` task (Gradle group
 
 **Android-specific (3):** MainDispatcherMisuse, ViewModelScopeLeak, LifecycleAwareScope.
 
-**Additional (17):** UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel, ChannelNotClosed (CHANNEL_001), ConsumeEachMultipleConsumers (CHANNEL_002), FlowBlockingCall (FLOW_001), LifecycleAwareFlowCollection (ARCH_002), MissingCatchInFlow (FLOW_005), CollectAsStateWithoutLifecycle (COMPOSE_001), RunBlockingInsteadOfRunTest (TEST_004), DispatchersIOInCommonMain (KMP_001), **SynchronizedInCoroutine** (CONCUR_001), **StateInWithEagerlyStrategy** (FLOW_006), **LaunchInWithUnstructuredScope** (FLOW_007), **RunBlockingInCommonMain** (KMP_002).
+**Additional (23):** UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel, ChannelNotClosed (CHANNEL_001), ConsumeEachMultipleConsumers (CHANNEL_002), FlowBlockingCall (FLOW_001), LifecycleAwareFlowCollection (ARCH_002), MissingCatchInFlow (FLOW_005), CollectAsStateWithoutLifecycle (COMPOSE_001), RunBlockingInsteadOfRunTest (TEST_004), DispatchersIOInCommonMain (KMP_001), SynchronizedInCoroutine (CONCUR_001), StateInWithEagerlyStrategy (FLOW_006), LaunchInWithUnstructuredScope (FLOW_007), RunBlockingInCommonMain (KMP_002), **RememberScopeForInit** (COMPOSE_002), **SideEffectInComposable** (COMPOSE_003), **BlockingFutureGet** (INTEROP_004).
 
-**Total: 29 issues.** See [Lint Rules](/docs/lint-rules).
+**Total: 35 issues.** See [Lint Rules](/docs/lint-rules).
 
 ## IntelliJ/Android Studio Plugin (Real-time)
 
-**28 inspections** (26 enabled by default; **RedundantWithContext** and **SideEffectInMapOperator** opt-in/disabled by default), **21 quick fixes**, **7 intentions**, **gutter icons**, and the **Structured Coroutines tool window**—including **Scan Project for Coroutine Issues**. New in v0.9.0: CONCUR_001, FLOW_006/007/008, CONCUR_004 (opt-in). Inspections use the same **import guard** as Detekt. See [IntelliJ Plugin](/docs/intellij-plugin).
+**35 inspections** (32 enabled by default; **RedundantWithContext**, **SideEffectInMapOperator**, and **MissingCoroutineName** opt-in/disabled by default), **28+ quick fixes**, **8+ intentions** (including **Flow Chain Analyzer**), **gutter icons**, and the **Structured Coroutines tool window**—including **Scan Project for Coroutine Issues**. New in v1.0.0: COMPOSE_002/003, TEST_005/006, FLOW_009/011, INTEROP_003/004, COMPOSE_001 quick fix, AnalyzeFlowChainIntention. Inspections use the same **import guard** as Detekt. See [IntelliJ Plugin](/docs/intellij-plugin).
 
 ## Comparison
 
 | Approach | When | Errors | Warnings | CI | Real-time |
 |----------|------|--------|----------|-----|-----------|
 | Compiler Plugin | Compile | ✅ 9 | ✅ 5 | ✅ | ❌ |
-| Detekt Rules | Analysis | — | ✅ 35 | ✅ | ❌ |
-| Android Lint | Analysis | — | ✅ 29 | ✅ | ❌ |
-| IDE Plugin | Editing | — | ✅ 28 | ❌ | ✅ |
+| Detekt Rules | Analysis | — | ✅ 40 | ✅ | ❌ |
+| Android Lint | Analysis | — | ✅ 35 | ✅ | ❌ |
+| IDE Plugin | Editing | — | ✅ 35 | ❌ | ✅ |
 | Gradle report | CI / local | — | — | ✅ | ❌ |
+
+**Documented patterns:** **51** rule codes in \`rule-codes.yml\`; **~119** individual implementations (rule × layer) across compiler, Detekt, Lint, and IntelliJ.
 
 For adoption in existing projects without breaking the build, see [Gradual Adoption](/docs/gradual-adoption). For rule codes and a full checklist, see [Best Practices](/docs/best-practices).
 `,
@@ -468,7 +501,7 @@ Multiplatform annotations for marking structured coroutine scopes and injecting 
 \`\`\`kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:0.9.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:1.0.0")
 }
 
 // Kotlin Multiplatform (commonMain)
@@ -476,7 +509,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.santimattius:structured-coroutines-annotations:0.9.0")
+                implementation("io.github.santimattius:structured-coroutines-annotations:1.0.0")
             }
         }
     }
@@ -549,7 +582,7 @@ JVM, JS, iOS, macOS, watchOS, tvOS, Linux, Windows, WASM. Use the \`annotations\
   "detekt-rules": `
 # Detekt Rules
 
-Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 35 rules** (10 compiler-plugin parity + 25 Detekt-only). Use for multiplatform projects and CI/CD. Two rules are **opt-in** by default: \`RedundantWithContext\` (CONCUR_004) and \`SideEffectInMapOperator\` (FLOW_008).
+Custom Detekt rules for enforcing structured concurrency in Kotlin Coroutines. **Total: 40 rules** (10 compiler-plugin parity + 30 Detekt-only). Use for multiplatform projects and CI/CD. Three rules are **opt-in** by default: \`RedundantWithContext\` (CONCUR_004), \`SideEffectInMapOperator\` (FLOW_008), and \`MissingCoroutineName\` (DEBUG_001).
 
 From **v0.6.0**, every rule applies an **import guard** (\`CoroutinesImportFilter\`): if a \`.kt\` file has no import starting with \`kotlinx.coroutines\`, the rule returns immediately. That cuts false positives when unrelated APIs reuse names like \`launch\`, \`async\`, or \`Dispatchers\` (for example Android instrumented tests using \`ActivityScenario.launch\`).
 
@@ -560,7 +593,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 }
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:0.9.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:1.0.0")
 }
 \`\`\`
 
@@ -568,7 +601,7 @@ dependencies {
 
 **Compiler Plugin parity (10):** GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, CancellationExceptionSubclass, CancellationExceptionSwallowed, JobInBuilderContext, RedundantLaunchInCoroutineScope, SuspendInFinally, UnusedDeferred.
 
-**Detekt-only (25):** … (see [Rules Overview](/docs/rules-overview) for full list). **v0.9.0 adds:** SynchronizedInCoroutine (CONCUR_001), SharedMutableStateInCoroutine (CONCUR_002), RedundantWithContext (CONCUR_004, opt-in), StateInWithEagerlyStrategy (FLOW_006), SideEffectInMapOperator (FLOW_008, opt-in), RunBlockingInCommonMain (KMP_002), MainScopeWithoutCancel (KMP_003), BlockingCallInCoroutineBackend (BACKEND_001), ThreadLocalNotPropagated (BACKEND_002).
+**Detekt-only (30):** … (see [Rules Overview](/docs/rules-overview) for full list). **v1.0.0 adds:** HardcodedDispatcherInClass (TEST_005), SharedFlowForOneshotEvents (FLOW_011), ChannelFlowVsCallbackFlow (INTEROP_003), BlockingFutureGet (INTEROP_004), MissingCoroutineName (DEBUG_001, opt-in).
 
 | Rule | Category | Description |
 |------|----------|-------------|
@@ -607,6 +640,11 @@ dependencies {
 | MainScopeWithoutCancel | Detekt-Only | \`MainScope()\` without \`cancel()\` in cleanup (KMP_003) |
 | BlockingCallInCoroutineBackend | Detekt-Only | Blocking JDBC/IO without \`withContext(IO)\` (BACKEND_001) |
 | ThreadLocalNotPropagated | Detekt-Only | MDC not propagated across \`withContext\` (BACKEND_002; requires SLF4J on classpath) |
+| HardcodedDispatcherInClass | Detekt-Only | \`Dispatchers.IO\`/\`Main\`/\`Default\` literals in production classes (TEST_005) |
+| SharedFlowForOneshotEvents | Detekt-Only | \`MutableSharedFlow(replay=0)\` for one-shot events (FLOW_011) |
+| ChannelFlowVsCallbackFlow | Detekt-Only | \`channelFlow\` vs \`callbackFlow\` misuse (INTEROP_003) |
+| BlockingFutureGet | Detekt-Only | \`.get()\` on Future/CompletableFuture in suspend (INTEROP_004) |
+| MissingCoroutineName | Detekt-Only | \`launch\`/\`async\` without \`CoroutineName\` (DEBUG_001, opt-in) |
 
 Run: \`./gradlew detekt\`. Full config and per-rule details: [Detekt Rules](/docs/detekt-rules) and repository [detekt-rules/README.md](https://github.com/santimattius/structured-coroutines/blob/main/detekt-rules/README.md).
 `,
@@ -623,7 +661,7 @@ From **v0.6.0**, use **Analyze → Scan Project for Coroutine Issues** (or the *
 - **From disk:** Download ZIP from [Releases](https://github.com/santimattius/structured-coroutines/releases) → Plugins → Install Plugin from Disk.
 - **Build locally:** \`./gradlew :intellij-plugin:buildPlugin\` then install the ZIP from \`intellij-plugin/build/distributions/\`. Run sandbox: \`./gradlew :intellij-plugin:runIde\`.
 
-## Inspections (28)
+## Inspections (35)
 
 The inspection list is the single source of truth for the project-wide scan: new inspections registered in the plugin are included automatically.
 
@@ -644,19 +682,26 @@ The inspection list is the single source of truth for the project-wide scan: new
 | LoopWithoutYield | WARNING | Loops in suspend without cooperation points (CANCEL_001); quick fixes: ensureActive, yield, delay(0) |
 | LifecycleAwareFlowCollection | WARNING | Flow collection in \`lifecycleScope.launch\` without \`repeatOnLifecycle\`/\`flowWithLifecycle\` (ARCH_002) |
 | WithTimeoutScopeCancellation | WARNING | \`withTimeout\` without try/catch for timeout/cancellation (CANCEL_006); quick fix: replace with \`withTimeoutOrNull\` |
-| **SuspendCoroutineWithoutCancellation** | ERROR | \`suspendCoroutine\` without cancellation (INTEROP_001); quick fix: replace with \`suspendCancellableCoroutine\` |
-| **CallbackFlowWithoutAwaitClose** | ERROR | \`callbackFlow\` without \`awaitClose\` (INTEROP_002); quick fix: add \`awaitClose { }\` |
-| **MutableFlowExposed** | WARNING | Public \`MutableStateFlow\`/\`MutableSharedFlow\` (FLOW_010); quick fix: backing property pattern |
-| **MissingCatchInFlow** | WARNING | Flow chain missing \`.catch\` before terminal (FLOW_005); quick fix: insert \`.catch\` |
-| **SequentialAsyncAwait** | WARNING | Sequential \`async { }.await()\` (CONCUR_003); quick fix: parallelize with \`coroutineScope\` |
-| **RunBlockingInsteadOfRunTest** | WARNING | \`runBlocking\` in test where \`runTest\` is better (TEST_004); intention: Convert to runTest |
-| **CollectAsStateWithoutLifecycle** | WARNING | \`collectAsState()\` in Composable (COMPOSE_001); use \`collectAsStateWithLifecycle()\` |
-| **DispatchersIOInCommonMain** | ERROR | \`Dispatchers.IO\` in \`commonMain\` (KMP_001) |
-| **SynchronizedInCoroutine** | WARNING | \`synchronized\` in coroutine (CONCUR_001); QF: Mutex.withLock |
-| **StateInWithEagerlyStrategy** | WARNING | \`stateIn(..., Eagerly)\` in ViewModel scope (FLOW_006); QF: WhileSubscribed |
-| **LaunchInWithUnstructuredScope** | WARNING | \`.launchIn(GlobalScope)\` / inline scope (FLOW_007); QF: viewModelScope/lifecycleScope |
-| **RedundantWithContext** | WARNING | Nested \`withContext\` same dispatcher (CONCUR_004, **disabled by default**) |
-| **SideEffectInMapOperator** | WARNING | Side effects in \`.map\` (FLOW_008, **disabled by default**) |
+| SuspendCoroutineWithoutCancellation | ERROR | \`suspendCoroutine\` without cancellation (INTEROP_001); quick fix: replace with \`suspendCancellableCoroutine\` |
+| CallbackFlowWithoutAwaitClose | ERROR | \`callbackFlow\` without \`awaitClose\` (INTEROP_002); quick fix: add \`awaitClose { }\` |
+| MutableFlowExposed | WARNING | Public \`MutableStateFlow\`/\`MutableSharedFlow\` (FLOW_010); quick fix: backing property pattern |
+| MissingCatchInFlow | WARNING | Flow chain missing \`.catch\` before terminal (FLOW_005); quick fix: insert \`.catch\` |
+| SequentialAsyncAwait | WARNING | Sequential \`async { }.await()\` (CONCUR_003); quick fix: parallelize with \`coroutineScope\` |
+| RunBlockingInsteadOfRunTest | WARNING | \`runBlocking\` in test where \`runTest\` is better (TEST_004); intention: Convert to runTest |
+| CollectAsStateWithoutLifecycle | WARNING | \`collectAsState()\` in Composable (COMPOSE_001); QF: \`collectAsStateWithLifecycle()\` |
+| DispatchersIOInCommonMain | ERROR | \`Dispatchers.IO\` in \`commonMain\` (KMP_001) |
+| SynchronizedInCoroutine | WARNING | \`synchronized\` in coroutine (CONCUR_001); QF: Mutex.withLock |
+| StateInWithEagerlyStrategy | WARNING | \`stateIn(..., Eagerly)\` in ViewModel scope (FLOW_006); QF: WhileSubscribed |
+| LaunchInWithUnstructuredScope | WARNING | \`.launchIn(GlobalScope)\` / inline scope (FLOW_007); QF: viewModelScope/lifecycleScope |
+| RedundantWithContext | WARNING | Nested \`withContext\` same dispatcher (CONCUR_004, **disabled by default**) |
+| SideEffectInMapOperator | WARNING | Side effects in \`.map\` (FLOW_008, **disabled by default**) |
+| **RememberScopeForInit** | WARNING | \`rememberCoroutineScope().launch\` for init (COMPOSE_002); QF: ReplaceWithLaunchedEffect |
+| **HardcodedDispatcherInClass** | WARNING | Hardcoded \`Dispatchers.*\` in production class (TEST_005) |
+| **CoroutineNotCompletedInTest** | WARNING | Assertions in \`runTest\` without \`advanceUntilIdle()\` (TEST_006) |
+| **FlatMapOperatorChoice** | INFO | Contextual guide for \`flatMapLatest\`/\`flatMapMerge\`/\`flatMapConcat\` (FLOW_009) |
+| **SharedFlowForOneshotEvents** | WARNING | \`MutableSharedFlow\` for one-shot events (FLOW_011); QF: Channel + receiveAsFlow |
+| **ChannelFlowVsCallbackFlow** | WARNING | \`channelFlow\` vs \`callbackFlow\` misuse (INTEROP_003) |
+| **BlockingFutureGet** | WARNING | \`.get()\` on Future in suspend (INTEROP_004); QF: \`.await()\` |
 
 ## Structured Coroutines Tool Window
 
@@ -664,11 +709,11 @@ The inspection list is the single source of truth for the project-wide scan: new
 
 ## Quick Fixes
 
-Replace with viewModelScope/lifecycleScope/coroutineScope; wrap with Dispatchers.IO; replace cancel with cancelChildren; remove runBlocking; add await / convert to launch; wrap with NonCancellable; add CancellationException handling; supervisorScope for Job in builder; cooperation points in loops; change superclass to Exception; replace with withTimeoutOrNull; replace suspendCoroutine with suspendCancellableCoroutine (INTEROP_001); add awaitClose (INTEROP_002); backing property for Mutable flows (FLOW_010); insert .catch (FLOW_005); parallelize async/await (CONCUR_003); **replace synchronized with Mutex.withLock** (CONCUR_001); **Eagerly → WhileSubscribed** (FLOW_006); **remove redundant withContext** (CONCUR_004).
+Replace with viewModelScope/lifecycleScope/coroutineScope; wrap with Dispatchers.IO; replace cancel with cancelChildren; remove runBlocking; add await / convert to launch; wrap with NonCancellable; add CancellationException handling; supervisorScope for Job in builder; cooperation points in loops; change superclass to Exception; replace with withTimeoutOrNull; replace suspendCoroutine with suspendCancellableCoroutine (INTEROP_001); add awaitClose (INTEROP_002); backing property for Mutable flows (FLOW_010); insert .catch (FLOW_005); parallelize async/await (CONCUR_003); replace synchronized with Mutex.withLock (CONCUR_001); Eagerly → WhileSubscribed (FLOW_006); remove redundant withContext (CONCUR_004); **collectAsStateWithLifecycle** (COMPOSE_001); **ReplaceWithLaunchedEffect** (COMPOSE_002); **SharedFlow → Channel** (FLOW_011); **.get() → .await()** (INTEROP_004).
 
-## Intentions (7)
+## Intentions (8+)
 
-Migrate to viewModelScope/lifecycleScope; wrap with coroutineScope; convert launch to async; extract suspend function; **Convert to runTest** (runBlocking + delay in tests → runTest, TEST_001); **Convert to runTest** for bare \`runBlocking\` in \`@Test\` (TEST_004).
+Migrate to viewModelScope/lifecycleScope; wrap with coroutineScope; convert launch to async; extract suspend function; **Convert to runTest** (runBlocking + delay in tests → runTest, TEST_001); **Convert to runTest** for bare \`runBlocking\` in \`@Test\` (TEST_004); **AnalyzeFlowChainIntention** — with the cursor on a Flow operator, summarizes the chain (catch, flatMap semantics, side effects, suggestions).
 
 ## Gutter Icons
 
@@ -676,13 +721,13 @@ Scope type (viewModelScope, lifecycleScope, GlobalScope, etc.) and dispatcher co
 
 ## Compatibility
 
-- IntelliJ IDEA 2024.3+ / Android Studio Ladybug+ (plugin **0.9.0-ALPHA01**, builds 243–261.*)
+- IntelliJ IDEA 2026.1+ / Android Studio (plugin **1.0.0**, builds 243–261.*)
 - K1 and K2 mode supported
 `,
   "gradle-plugin": `
 # Gradle Plugin
 
-Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. **14 rules** (9 errors, 5 warnings) are configurable. From **v0.3.0** you can use **profiles** and **exclude** source sets or projects; from **v0.4.0** the **LoopWithoutYield** (CANCEL_001) checker can be enabled/disabled via \`loopWithoutYield\`. From **v0.6.0**, the **structuredCoroutinesReport** task generates **HTML** and/or **plain-text** configuration reports for CI and audits. From **v0.8.0**, **platform profiles** (\`useAndroidComposeProfile\`, \`useKmpCommonProfile\`) and INTEROP compiler options are available. From **v0.9.0**, **\`useKtorBackendProfile()\`**, **Detekt baseline** DSL (\`generateCoroutinesBaseline\`, \`applyCoroutinesBaseline\`), packaged \`ktor-backend-detekt.yml\`, and a **Learning Path** section in HTML reports.
+Integrates the Structured Coroutines **K2/FIR Compiler Plugin** so you can enforce structured concurrency at compile time. **14 rules** (9 errors, 5 warnings) are configurable. From **v0.3.0** you can use **profiles** and **exclude** source sets or projects; from **v0.4.0** the **LoopWithoutYield** (CANCEL_001) checker can be enabled/disabled via \`loopWithoutYield\`. From **v0.6.0**, the **structuredCoroutinesReport** task generates **HTML** and/or **plain-text** configuration reports for CI and audits. From **v0.8.0**, **platform profiles** (\`useAndroidComposeProfile\`, \`useKmpCommonProfile\`) and INTEROP compiler options are available. From **v0.9.0**, **\`useKtorBackendProfile()\`**, **Detekt baseline** DSL, packaged \`ktor-backend-detekt.yml\`, and a **Learning Path** section in HTML reports. From **v1.0.0**, **\`useSpringBackendProfile()\`** and packaged \`spring-backend-detekt.yml\`.
 
 ## Installation
 
@@ -700,11 +745,11 @@ pluginManagement {
 // build.gradle.kts
 plugins {
     kotlin("jvm") version "2.3.0"   // Kotlin 2.3+ (K2) required
-    id("io.github.santimattius.structured-coroutines") version "0.9.0"
+    id("io.github.santimattius.structured-coroutines") version "1.0.0"
 }
 
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:0.9.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:1.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 }
 \`\`\`
@@ -742,7 +787,8 @@ structuredCoroutines {
     // useRelaxedProfile()   // Same as gradual
     // useAndroidComposeProfile()  // Strict + INTEROP_001/002 as error (v0.8.0)
     // useKmpCommonProfile()       // Same as Android Compose (v0.8.0)
-    // useKtorBackendProfile()     // Strict for Ktor/Spring JVM (v0.9.0)
+    // useKtorBackendProfile()     // Strict for Ktor JVM (v0.9.0)
+    // useSpringBackendProfile()   // Strict for Spring JVM (v1.0.0)
 }
 \`\`\`
 
@@ -752,7 +798,8 @@ structuredCoroutines {
 | **Gradual** / **Relaxed** | Migrating; build must not fail | All **14** rules → **warning** |
 | **Android Compose** | Android + Compose / callback interop | Strict + \`suspendCoroutineWithoutCancellation\` & \`callbackFlowWithoutAwaitClose\` → **error** |
 | **KMP Common** | Multiplatform \`commonMain\` modules | Same as Android Compose (Lint Compose rules no-op off Android) |
-| **Ktor Backend** | Ktor / Spring JVM services | Strict preset; use packaged \`ktor-backend-detekt.yml\` for Detekt |
+| **Ktor Backend** | Ktor JVM services | Strict preset; use packaged \`ktor-backend-detekt.yml\` for Detekt |
+| **Spring Backend** | Spring / JVM services | Strict + INTEROP as error; use packaged \`spring-backend-detekt.yml\` (v1.0.0) |
 
 ## Detekt baseline (v0.9.0+)
 
@@ -814,14 +861,14 @@ Supports **JVM** and **Kotlin Multiplatform**. For KMP, apply \`kotlin(\"multipl
   "lint-rules": `
 # Android Lint Rules
 
-Custom Android Lint rules for structured concurrency and **Android-specific** detection. **Total: 29 issues** (9 from Compiler Plugin + 3 Android-specific + 17 additional). Run with \`./gradlew lint\`; integrate with Android Studio for real-time feedback and quick fixes.
+Custom Android Lint rules for structured concurrency and **Android-specific** detection. **Total: 35 issues** (9 from Compiler Plugin + 3 Android-specific + 23 additional). Run with \`./gradlew lint\`; integrate with Android Studio for real-time feedback and quick fixes.
 
 ## Installation
 
 \`\`\`kotlin
 // build.gradle.kts (Android module)
 dependencies {
-    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:0.9.0")
+    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:1.0.0")
 }
 \`\`\`
 
@@ -833,7 +880,7 @@ dependencies {
 |----------|-------|----------|
 | Compiler Plugin | 9 | GlobalScopeUsage, InlineCoroutineScope, RunBlockingInSuspend, DispatchersUnconfined, JobInBuilderContext, SuspendInFinally, CancellationExceptionSwallowed, AsyncWithoutAwait |
 | Android-Specific | 3 | **MainDispatcherMisuse** (blocking on Main → ANRs), **ViewModelScopeLeak**, **LifecycleAwareScope** |
-| Additional | 17 | UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel, ChannelNotClosed (CHANNEL_001), ConsumeEachMultipleConsumers (CHANNEL_002), FlowBlockingCall (FLOW_001), LifecycleAwareFlowCollection (ARCH_002), MissingCatchInFlow (FLOW_005), CollectAsStateWithoutLifecycle (COMPOSE_001), RunBlockingInsteadOfRunTest (TEST_004), DispatchersIOInCommonMain (KMP_001), **SynchronizedInCoroutine** (CONCUR_001), **StateInWithEagerlyStrategy** (FLOW_006), **LaunchInWithUnstructuredScope** (FLOW_007), **RunBlockingInCommonMain** (KMP_002) |
+| Additional | 23 | UnstructuredLaunch, RedundantLaunchInCoroutineScope, RunBlockingWithDelayInTest, LoopWithoutYield, ScopeReuseAfterCancel, ChannelNotClosed (CHANNEL_001), ConsumeEachMultipleConsumers (CHANNEL_002), FlowBlockingCall (FLOW_001), LifecycleAwareFlowCollection (ARCH_002), MissingCatchInFlow (FLOW_005), CollectAsStateWithoutLifecycle (COMPOSE_001), RunBlockingInsteadOfRunTest (TEST_004), DispatchersIOInCommonMain (KMP_001), SynchronizedInCoroutine (CONCUR_001), StateInWithEagerlyStrategy (FLOW_006), LaunchInWithUnstructuredScope (FLOW_007), RunBlockingInCommonMain (KMP_002), **RememberScopeForInit** (COMPOSE_002), **SideEffectInComposable** (COMPOSE_003), **BlockingFutureGet** (INTEROP_004) |
 
 Configure severity per issue id in \`lint.xml\`.
 
@@ -907,7 +954,7 @@ The **sample** project includes a \`compilation\` package with one example per c
   "kotlin-coroutines-skill": `
 # Kotlin Coroutines Skill
 
-Expert guidance for **any AI coding tool** that supports Agent Skills or custom instructions — **safe structured concurrency**, performance, and Kotlin 1.9/2.0+ best practices for Coroutines. **v2.0.0** includes **32 practices**, **34 triage entries**, and **32 reference files**. **Toolkit v0.8.0** adds interop (§10), KMP dispatchers (§11.1), Flow safety (§9.5–9.6), Compose (§8.3). **Toolkit v0.9.0** adds concurrency (§12), backend JVM (§13.1), redundant withContext / MDC (§3.6–3.7), Flow ViewModel patterns (§9.7–9.9), and KMP runBlocking/MainScope (§11.2–11.3).
+Expert guidance for **any AI coding tool** that supports Agent Skills or custom instructions — **safe structured concurrency**, performance, and Kotlin 1.9/2.0+ best practices for Coroutines. **v3.0.0** aligns with toolkit **v1.0.0**: **51 documented patterns**, **65+ triage entries**, and references for §§8.4–8.5 (Compose), §§6.5–6.6 (testing), §§9.10–9.11 (Flow), §§10.3–10.4 (interop), §14.1 (debugging). **Toolkit v0.8.0** adds interop (§10), KMP dispatchers (§11.1), Flow safety (§9.5–9.6), Compose (§8.3). **Toolkit v0.9.0** adds concurrency (§12), backend JVM (§13.1), redundant withContext / MDC (§3.6–3.7), Flow ViewModel patterns (§9.7–9.9), and KMP runBlocking/MainScope (§11.2–11.3).
 
 This skill is part of the [Structured Coroutines](https://github.com/santimattius/structured-coroutines) project. **SKILL.md** is the single entry point: it consolidates agent identity, strict rules, the triage playbook, and the required output format; **references/** holds one markdown file per practice (32 in v2.0.0) with Bad / Recommended / Why / Quick fix. Together they encode scopes, dispatchers, exceptions, cancellation, testing, channels, Flow, and Android lifecycle so that **Claude, ChatGPT, Cursor, or other agents** give **consistent, correct** advice on Kotlin Coroutines. Inspired by the [Swift Concurrency Agent Skill](https://github.com/AvdLee/Swift-Concurrency-Agent-Skill) model.
 
@@ -927,10 +974,11 @@ kotlin-coroutines-skill/
 
 | Asset | Description |
 |-------|-------------|
-| **SKILL.md** | Triage playbook including the full **Agent Behavior Contract**: identity, strict rules, tone, output format (analysis → erroneous code → optimized code → explanation), and triage table (topic/error → reference file). |
-| **references/** | 32 markdown files, one per practice. Each has Bad / Recommended / Why / Quick fix. |
+| **SKILL.md** | Triage playbook including the full **Agent Behavior Contract**: identity, strict rules, tone, output format (analysis → erroneous code → optimized code → explanation), and triage table (65+ entries; topic/error → reference file). |
+| **references/** | One markdown file per practice. Each has Bad / Recommended / Why / Quick fix. New in v3.0.0: §§8.4–8.5, 6.5–6.6, 9.10–9.11, 10.3–10.4, 14.1. |
+| **SYSTEM_PROMPT.md** | Standalone agent prompt with INTEROP_001–004, KMP_001–003, COMPOSE_001–003 rules. |
 
-**References by section:**
+**References by section (selected):**
 
 | § | Topic |
 |---|-------|
@@ -950,14 +998,22 @@ kotlin-coroutines-skill/
 | 5.2 | CancellationException for domain errors |
 | 6.1 | Slow tests with real delays |
 | 6.2 | Uncontrolled fire-and-forget in tests |
+| 6.5 | Hardcoded Dispatchers in production classes |
+| 6.6 | advanceUntilIdle before assertions in runTest |
 | 7.1 | Channel not closed |
 | 7.2 | consumeEach with multiple consumers |
 | 8 | Architecture patterns |
 | 8.3 | collectAsStateWithLifecycle (Compose) |
+| 8.4 | rememberCoroutineScope for init → LaunchedEffect |
+| 8.5 | Side effects in Composable body |
 | 9.5 | Mutable flows exposed publicly |
 | 9.6 | Missing .catch in Flow chains |
+| 9.10 | flatMapLatest vs flatMapMerge vs flatMapConcat |
+| 9.11 | SharedFlow for one-shot events |
 | 10.1 | suspendCoroutine without cancellation |
 | 10.2 | callbackFlow without awaitClose |
+| 10.3 | channelFlow vs callbackFlow |
+| 10.4 | Future.get → await |
 | 11.1 | Dispatchers.IO in commonMain (KMP) |
 | 11.2 | runBlocking in commonMain (KMP) |
 | 11.3 | MainScope without cancel |
@@ -969,6 +1025,7 @@ kotlin-coroutines-skill/
 | 9.8 | launchIn unstructured scope |
 | 9.9 | Side effects in Flow map |
 | 13.1 | Blocking calls in backend coroutines |
+| 14.1 | Missing CoroutineName (opt-in) |
 
 ## Setup
 
@@ -1044,11 +1101,14 @@ The skill enforces these rules in every response:
 - Tests use \`runTest\` with virtual time (\`advanceTimeBy\`, \`advanceUntilIdle\`). No real \`delay()\`.
 - Channels: prefer \`produce { }\`. Use \`for (x in channel)\` per consumer, not \`consumeEach\` for fan-out.
 - Callback bridges: \`suspendCancellableCoroutine\` + \`invokeOnCancellation\`; \`callbackFlow\` + \`awaitClose\`.
-- Compose: \`collectAsStateWithLifecycle()\` over \`collectAsState()\`.
-- KMP: inject dispatchers via \`@IoDispatcher\`; no \`Dispatchers.IO\` or \`runBlocking\` in \`commonMain\`.
+- Compose: \`collectAsStateWithLifecycle()\` over \`collectAsState()\`; \`LaunchedEffect\` for init; \`SideEffect\` for logging
+- KMP: inject dispatchers via \`@IoDispatcher\`; no \`Dispatchers.IO\` or \`runBlocking\` in \`commonMain\`
 - Use \`Mutex.withLock\` instead of \`synchronized\` in suspend code.
 - \`stateIn\` with \`WhileSubscribed\`, not \`Eagerly\`, in ViewModels.
 - Backend: blocking I/O on \`Dispatchers.IO\`; \`MDCContext()\` when using SLF4J MDC.
+- One-shot events: \`Channel(BUFFERED)\` + \`receiveAsFlow()\`, not default \`MutableSharedFlow\`.
+- Interop: \`callbackFlow\` + \`awaitClose\`; \`.await()\` instead of \`Future.get()\`.
+- Tests: inject dispatchers; \`advanceUntilIdle()\` before assertions in \`runTest\`.
 
 Full agent contract, rules, and triage live in **SKILL.md**; per-practice detail is in \`references/\`. Repository: [kotlin-coroutines-skill](https://github.com/santimattius/structured-coroutines/tree/main/kotlin-coroutines-skill).
 `,
@@ -1062,8 +1122,8 @@ Key artifacts and documentation are maintained in the repository:
 | \`io.github.santimattius:structured-coroutines-annotations\` | \`@StructuredScope\`, \`@IoDispatcher\`, \`@MainDispatcher\`, \`@DefaultDispatcher\` (multiplatform) |
 | \`io.github.santimattius:structured-coroutines-compiler\` | K2/FIR compiler plugin |
 | \`io.github.santimattius.structured-coroutines\` (Gradle) | Gradle plugin |
-| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (35) |
-| \`io.github.santimattius:structured-coroutines-lint-rules\` | Android Lint rules (29) |
+| \`io.github.santimattius:structured-coroutines-detekt-rules\` | Detekt rules (40) |
+| \`io.github.santimattius:structured-coroutines-lint-rules\` | Android Lint rules (35) |
 
 **Module docs** (repository [main](https://github.com/santimattius/structured-coroutines/tree/main)): [Gradle Plugin](https://github.com/santimattius/structured-coroutines/blob/main/gradle-plugin/README.md), [Detekt](https://github.com/santimattius/structured-coroutines/blob/main/detekt-rules/README.md), [Lint](https://github.com/santimattius/structured-coroutines/blob/main/lint-rules/README.md), [IntelliJ](https://github.com/santimattius/structured-coroutines/blob/main/intellij-plugin/README.md), [Annotations](https://github.com/santimattius/structured-coroutines/blob/main/annotations/README.md), [Compiler](https://github.com/santimattius/structured-coroutines/blob/main/compiler/README.md), [Kotlin Coroutines Skill](https://github.com/santimattius/structured-coroutines/blob/main/kotlin-coroutines-skill/README.md).
 
@@ -1082,6 +1142,18 @@ Key artifacts and documentation are maintained in the repository:
 ## Unreleased${latestGitTag ? ` (latest: ${latestGitTag})` : ''}
 
 See repository for ongoing changes.
+
+## v1.0.0 — Production Ready Complete
+
+**Codename:** Production Ready Complete · **Date:** 2026-06-04 · Closes V2 roadmap iteration 3/3.
+
+- **9 new rules:** COMPOSE_002 (\`RememberScopeForInit\`), COMPOSE_003 (\`SideEffectInComposable\`), TEST_005 (\`HardcodedDispatcherInClass\`), TEST_006 (\`CoroutineNotCompletedInTest\`), FLOW_009 (\`FlatMapOperatorChoice\`, info), FLOW_011 (\`SharedFlowForOneshotEvents\`), INTEROP_003 (\`ChannelFlowVsCallbackFlow\`), INTEROP_004 (\`BlockingFutureGet\`), DEBUG_001 (\`MissingCoroutineName\`, opt-in). Compiler unchanged at **14** rules. Detekt **40**, Lint **35**, IntelliJ **35** inspections / **28+** quick fixes. **51** documented patterns; **~119** rule × layer implementations.
+- **Flow Chain Analyzer:** \`AnalyzeFlowChainIntention\` summarizes Flow chains (catch, flatMap semantics, side effects).
+- **Gradle:** \`useSpringBackendProfile()\` + \`spring-backend-detekt.yml\` for Spring/JVM services.
+- **IntelliJ quick fixes:** COMPOSE_001 \`collectAsStateWithLifecycle\`; COMPOSE_002 \`LaunchedEffect\`; FLOW_011 Channel; INTEROP_004 \`.await()\`.
+- **Kotlin Coroutines Skill v3.0.0:** references §§8.4–8.5, 6.5–6.6, 9.10–9.11, 10.3–10.4, 14.1; \`SYSTEM_PROMPT.md\` updated.
+- **Platform guides:** Compose, KMP, Ktor, Spring; migration guide \`MIGRATION_v0.7_to_v1.0.md\`.
+- **Requirements:** Kotlin 2.3.0+ (recommended 2.3.20), kotlinx-coroutines **1.11.0**, IntelliJ plugin **1.0.0** (builds 243–261.*).
 
 ## v0.9.0 — Concurrency, KMP & Backend
 
