@@ -1,0 +1,69 @@
+name: Update toolkit version
+
+on:
+  repository_dispatch:
+    types: [toolkit-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Toolkit version (e.g. 1.3.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    env:
+      RAW_VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      RELEASE_URL: ${{ github.event.client_payload.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate version
+        id: version
+        run: |
+          VERSION="${RAW_VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: not X.Y.Z" >&2
+            exit 1
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$RELEASE_URL" =~ ^https://github\.com/santimattius/structured-coroutines/releases/ ]]; then
+            echo "url=$RELEASE_URL" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=https://github.com/santimattius/structured-coroutines/releases/tag/$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version references
+        run: node scripts/bump-version.mjs "${{ steps.version.outputs.value }}"
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/bump-toolkit-${{ steps.version.outputs.value }}
+          base: main
+          commit-message: "chore: bump toolkit to ${{ steps.version.outputs.value }}"
+          title: "chore: bump toolkit to ${{ steps.version.outputs.value }}"
+          body: |
+            Automated bump of the toolkit version references to **${{ steps.version.outputs.value }}**.
+
+            Release notes: ${{ steps.version.outputs.url }}
+
+            This PR only updates version badges and install snippets. Review checklist:
+
+            - [ ] Add a changelog section for ${{ steps.version.outputs.value }} in `constants.tsx`
+            - [ ] Document new rules or features (rules overview, compiler / Detekt / Lint / IntelliJ pages)
+            - [ ] Update rule and inspection counts
+            - [ ] Check the required Kotlin version and the IntelliJ plugin version
+            - [ ] Check the Kotlin Coroutines Skill section for version changes
+          delete-branch: true

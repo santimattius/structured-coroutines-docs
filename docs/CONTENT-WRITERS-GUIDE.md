@@ -126,6 +126,18 @@ The website renders a **subset of Markdown** inside `constants.tsx`:
 
 ---
 
+## Release automation
+
+When the toolkit publishes a stable release, the `Update toolkit version` workflow (`.github/workflows/update-version.yml`) runs on a `repository_dispatch` event of type `toolkit-release` (payload: `client_payload.version`, `client_payload.url`) or manually via **Run workflow** with a `version` input.
+
+**Automatic:** `scripts/bump-version.mjs` rewrites the toolkit version in `constants.tsx` (the `Toolkit-X.Y.Z` badge, the Gradle plugin version, and the annotations / Detekt / Lint coordinates) and the workflow opens a PR named `chore: bump toolkit to X.Y.Z`. Prereleases (versions containing `-`) are rejected. The IntelliJ plugin version, changelog history and "vX.Y.Z+" prose are never touched. You can run it locally with `node scripts/bump-version.mjs 1.3.0`.
+
+**Manual (review the PR and add):** the changelog section, documentation for new rules or features, rule and inspection counts, the required Kotlin version, the IntelliJ plugin version, and any Kotlin Coroutines Skill changes.
+
+**Required repository setting:** *Settings > Actions > General > Workflow permissions > Allow GitHub Actions to create and approve pull requests*. Without it the PR step fails. The toolkit repository must also send the `toolkit-release` dispatch using a token with permission to dispatch events on this repository.
+
+---
+
 ## Quality Checklist
 
 Before publishing content changes:
