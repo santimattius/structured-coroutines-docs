@@ -137,7 +137,7 @@ export const DOCS_CONTENT: Record<string, string> = {
 
 **Structured Coroutines** is a comprehensive toolkit for enforcing **structured concurrency** in Kotlin Coroutines, inspired by Swift Concurrency. It provides multiple layers of protection through compile-time checks and static analysis.
 
-[![Kotlin 2.4.0](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg)](https://kotlinlang.org) [![Toolkit 1.2.0](https://img.shields.io/badge/Toolkit-1.2.0-purple.svg)](https://github.com/santimattius/structured-coroutines/releases) [![Coroutines 1.11.0](https://img.shields.io/badge/kotlinx--coroutines-1.11.0-blue.svg)](https://github.com/Kotlin/kotlinx.coroutines) [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/santimattius/structured-coroutines/blob/main/LICENSE) [![Multiplatform](https://img.shields.io/badge/Multiplatform-Supported-orange.svg)](https://kotlinlang.org/docs/multiplatform.html)
+[![Kotlin 2.4.0](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg)](https://kotlinlang.org) [![Toolkit 1.2.1](https://img.shields.io/badge/Toolkit-1.2.1-purple.svg)](https://github.com/santimattius/structured-coroutines/releases) [![Coroutines 1.11.0](https://img.shields.io/badge/kotlinx--coroutines-1.11.0-blue.svg)](https://github.com/Kotlin/kotlinx.coroutines) [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/santimattius/structured-coroutines/blob/main/LICENSE) [![Multiplatform](https://img.shields.io/badge/Multiplatform-Supported-orange.svg)](https://kotlinlang.org/docs/multiplatform.html)
 
 ## Why This Toolkit?
 
@@ -360,7 +360,7 @@ This guide helps you adopt the Structured Coroutines plugin in an existing codeb
 \`\`\`kotlin
 plugins {
     kotlin("jvm") version "2.4.0"
-    id("io.github.santimattius.structured-coroutines") version "1.2.0"
+    id("io.github.santimattius.structured-coroutines") version "1.2.1"
 }
 structuredCoroutines {
     useGradualProfile()  // All warnings; no build failure
@@ -502,7 +502,7 @@ Multiplatform annotations for marking structured coroutine scopes and injecting 
 \`\`\`kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:1.2.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:1.2.1")
 }
 
 // Kotlin Multiplatform (commonMain)
@@ -510,7 +510,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation("io.github.santimattius:structured-coroutines-annotations:1.2.0")
+                implementation("io.github.santimattius:structured-coroutines-annotations:1.2.1")
             }
         }
     }
@@ -594,7 +594,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
 }
 dependencies {
-    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:1.2.0")
+    detektPlugins("io.github.santimattius:structured-coroutines-detekt-rules:1.2.1")
 }
 \`\`\`
 
@@ -774,11 +774,11 @@ pluginManagement {
 // build.gradle.kts
 plugins {
     kotlin("jvm") version "2.4.0"   // Kotlin 2.4+ (K2) required since 1.2.0
-    id("io.github.santimattius.structured-coroutines") version "1.2.0"
+    id("io.github.santimattius.structured-coroutines") version "1.2.1"
 }
 
 dependencies {
-    implementation("io.github.santimattius:structured-coroutines-annotations:1.2.0")
+    implementation("io.github.santimattius:structured-coroutines-annotations:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
 }
 \`\`\`
@@ -920,7 +920,7 @@ Custom Android Lint rules for structured concurrency and **Android-specific** de
 \`\`\`kotlin
 // build.gradle.kts (Android module)
 dependencies {
-    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:1.2.0")
+    lintChecks("io.github.santimattius:structured-coroutines-lint-rules:1.2.1")
 }
 \`\`\`
 
